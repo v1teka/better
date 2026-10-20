@@ -16,6 +16,7 @@ import { SoundToggle } from "@/components/sound-toggle";
 import { getPracticeById } from "@/lib/practice-selector";
 import { usePracticeTimer } from "@/lib/practice-timer";
 import { useSoundOn } from "@/lib/sound-setting";
+import { usePalette } from "@/lib/theme-setting";
 
 const gongSound = require("@/assets/sounds/gong.mp3");
 const ambientSound = require("@/assets/sounds/ambient.m4a");
@@ -59,6 +60,7 @@ export default function PracticeScreen() {
 }
 
 function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSeconds: number }) {
+  const palette = usePalette();
   const isCompletingRef = useRef(false);
   const soundOn = useSoundOn();
   const soundOnRef = useRef(soundOn);
@@ -157,7 +159,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
     <View className="flex-1">
       {/* Gradient Background */}
       <LinearGradient
-        colors={["#FFE5D9", "#D9F7F1"]}
+        colors={palette.gradient}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         className="absolute inset-0"
@@ -190,7 +192,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
             label="Сейчас выполняете"
             hint="Следуйте шагам ниже, пока идёт таймер. Когда время выйдет, прозвучит гонг — даже на заблокированном экране. Закончили раньше — нажмите «Завершить»."
           />
-          <Text className="text-[28px] font-bold text-center leading-tight text-[#2D3748]">
+          <Text className="text-[28px] font-bold text-center leading-tight" style={{ color: palette.text }}>
             {practice.title}
           </Text>
         </View>
@@ -221,7 +223,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
                 cx={54}
                 cy={54}
                 r={RADIUS}
-                stroke="rgba(74,144,226,0.15)"
+                stroke={palette.ringTrack}
                 strokeWidth={6}
                 fill="none"
               />
@@ -236,7 +238,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
                 cx={54}
                 cy={54}
                 r={RADIUS}
-                stroke={isDone ? "#4CAF50" : "#4A90E2"}
+                stroke={isDone ? palette.success : palette.accent}
                 strokeWidth={6}
                 fill="none"
                 strokeDasharray={`${CIRCUMFERENCE}`}
@@ -250,7 +252,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
                 style={{
                   fontSize: isDone ? 18 : 26,
                   fontWeight: "700",
-                  color: isDone ? "#4CAF50" : "#2D3748",
+                  color: isDone ? palette.success : palette.text,
                   letterSpacing: isDone ? 0 : 1,
                 }}
               >
@@ -271,7 +273,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
                 opacity: pressed ? 0.6 : 1,
               })}
             >
-              <Text style={{ fontSize: 14, color: "#4A90E2", fontWeight: "500" }}>
+              <Text style={{ fontSize: 14, color: palette.accent, fontWeight: "500" }}>
                 {isRunning ? "Пауза" : "Продолжить"}
               </Text>
             </Pressable>
@@ -304,12 +306,12 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
             marginTop: 16,
             paddingVertical: 16,
             borderRadius: 12,
-            backgroundColor: "#4A90E2",
+            backgroundColor: palette.button,
             opacity: pressed ? 0.7 : 1,
             alignItems: "center",
           })}
         >
-          <Text style={{ fontSize: 18, fontWeight: "600", color: "#FFFFFF" }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>
             Завершить
           </Text>
         </Pressable>

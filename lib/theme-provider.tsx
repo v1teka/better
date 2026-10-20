@@ -3,18 +3,21 @@ import { View } from "react-native";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors } from "@/constants/theme";
+import { useScheme } from "@/lib/theme-setting";
 
-// Every screen is designed for a light background (gradients, dark text),
-// so the app stays light even when the system is in dark mode.
-const SCHEME = "light";
-
+/**
+ * Follows the theme chosen with the logo switch (lib/theme-setting.ts), not the system one.
+ * On iOS nativewind passes the choice on to the native UI (alerts, keyboard).
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const scheme = useScheme();
+
   useEffect(() => {
-    nativewindColorScheme.set(SCHEME);
-  }, []);
+    nativewindColorScheme.set(scheme);
+  }, [scheme]);
 
   const themeVariables = useMemo(() => {
-    const palette = SchemeColors[SCHEME];
+    const palette = SchemeColors[scheme];
     return vars({
       "color-primary": palette.primary,
       "color-background": palette.background,
@@ -26,7 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       "color-warning": palette.warning,
       "color-error": palette.error,
     });
-  }, []);
+  }, [scheme]);
 
   return <View style={[{ flex: 1 }, themeVariables]}>{children}</View>;
 }

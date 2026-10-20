@@ -4,11 +4,14 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 
+import { usePalette } from "@/lib/theme-setting";
+
 /**
  * A small caption with a "?" button that reveals a short explanation.
  * Tells the person where they are, e.g. "offered to you" vs "doing now".
  */
 export function HintLabel({ label, hint }: { label: string; hint: string }) {
+  const palette = usePalette();
   const [open, setOpen] = useState(false);
 
   const toggle = () => {
@@ -36,12 +39,12 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
             fontWeight: "600",
             letterSpacing: 1.5,
             textTransform: "uppercase",
-            color: "#4A90E2",
+            color: palette.accent,
           }}
         >
           {label}
         </Text>
-        <Ionicons name={open ? "help-circle" : "help-circle-outline"} size={18} color="#4A90E2" />
+        <Ionicons name={open ? "help-circle" : "help-circle-outline"} size={18} color={palette.accent} />
       </Pressable>
 
       {open && (
@@ -51,7 +54,7 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
           style={{
             fontSize: 14,
             lineHeight: 20,
-            color: "#4A5568",
+            color: palette.textSecondary,
             textAlign: "center",
             maxWidth: 300,
           }}

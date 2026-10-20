@@ -7,6 +7,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { HintLabel } from "@/components/hint-label";
 import { getSelectionHistory, rememberOffered } from "@/lib/history";
 import { pickPractice, practiceDuration } from "@/lib/practice-selector";
+import { usePalette } from "@/lib/theme-setting";
 import { formatMinutes } from "@/lib/utils";
 import type { Practice, UserState, Energy, Focus, Tension, SurveyTime, Time } from "@/types/practice";
 
@@ -36,6 +37,7 @@ function parseState(params: Record<string, string | string[] | undefined>): User
  */
 export default function RecommendationScreen() {
   const router = useRouter();
+  const palette = usePalette();
   const params = useLocalSearchParams();
 
   const [practice, setPractice] = useState<Practice | null>(null);
@@ -82,7 +84,7 @@ export default function RecommendationScreen() {
     return (
       <ScreenContainer>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontSize: 16, color: "#888888" }}>Подбираем практику…</Text>
+          <Text style={{ fontSize: 16, color: palette.muted }}>Подбираем практику…</Text>
         </View>
       </ScreenContainer>
     );
@@ -102,8 +104,8 @@ export default function RecommendationScreen() {
             gap: 4,
           })}
         >
-          <Text style={{ fontSize: 28, color: "#4A90E2", lineHeight: 32 }}>‹</Text>
-          <Text style={{ fontSize: 17, color: "#4A90E2", fontWeight: "500" }}>Назад</Text>
+          <Text style={{ fontSize: 28, color: palette.accent, lineHeight: 32 }}>‹</Text>
+          <Text style={{ fontSize: 17, color: palette.accent, fontWeight: "500" }}>Назад</Text>
         </Pressable>
 
         {/* Practice Display - Centered */}
@@ -112,10 +114,10 @@ export default function RecommendationScreen() {
             label="Предложено вам"
             hint="Эту практику мы подобрали по вашим ответам. Нажмите «Начать» — откроются таймер и шаги. Не подходит — вернитесь и ответьте по-другому."
           />
-          <Text style={{ fontSize: 36, fontWeight: "700", color: "#333333", textAlign: "center", paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 36, fontWeight: "700", color: palette.text, textAlign: "center", paddingHorizontal: 16 }}>
             {practice.title}
           </Text>
-          <Text style={{ fontSize: 15, color: "#888888" }}>
+          <Text style={{ fontSize: 15, color: palette.muted }}>
             {formatMinutes(duration)} · {CATEGORY_LABELS[practice.category] || practice.category}
           </Text>
         </View>
@@ -126,12 +128,12 @@ export default function RecommendationScreen() {
           style={({ pressed }) => ({
             paddingVertical: 16,
             borderRadius: 12,
-            backgroundColor: "#4A90E2",
+            backgroundColor: palette.button,
             opacity: pressed ? 0.7 : 1,
             alignItems: "center",
           })}
         >
-          <Text style={{ fontSize: 18, fontWeight: "600", color: "#FFFFFF" }}>
+          <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>
             Начать
           </Text>
         </Pressable>

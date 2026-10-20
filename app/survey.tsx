@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 
 import { ScreenContainer } from "@/components/screen-container";
+import { usePalette } from "@/lib/theme-setting";
 import type { UserState } from "@/types/practice";
 
 type Option<T> = { value: T; label: string };
@@ -57,6 +58,7 @@ const QUESTIONS: {
  */
 export default function SurveyScreen() {
   const router = useRouter();
+  const palette = usePalette();
   const [state, setState] = useState<UserState>({
     energy: null,
     focus: null,
@@ -108,23 +110,23 @@ export default function SurveyScreen() {
               gap: 4,
             })}
           >
-            <Text style={{ fontSize: 28, color: "#4A90E2", lineHeight: 32 }}>‹</Text>
-            <Text style={{ fontSize: 17, color: "#4A90E2", fontWeight: "500" }}>Назад</Text>
+            <Text style={{ fontSize: 28, color: palette.accent, lineHeight: 32 }}>‹</Text>
+            <Text style={{ fontSize: 17, color: palette.accent, fontWeight: "500" }}>Назад</Text>
           </Pressable>
 
           {/* Title */}
           <View style={{ gap: 8 }}>
-            <Text style={{ fontSize: 32, fontWeight: "700", color: "#333333", textAlign: "center" }}>
+            <Text style={{ fontSize: 32, fontWeight: "700", color: palette.text, textAlign: "center" }}>
               Как вы себя чувствуете?
             </Text>
-            <Text style={{ fontSize: 15, color: "#718096", textAlign: "center", lineHeight: 21 }}>
+            <Text style={{ fontSize: 15, color: palette.muted, textAlign: "center", lineHeight: 21 }}>
               Отметьте то, что знаете о себе сейчас.{"\n"}Можно ответить не на всё.
             </Text>
           </View>
 
           {QUESTIONS.map((question) => (
             <View key={question.key} style={{ gap: 12 }}>
-              <Text style={{ fontSize: 18, fontWeight: "600", color: "#333333" }}>{question.title}</Text>
+              <Text style={{ fontSize: 18, fontWeight: "600", color: palette.text }}>{question.title}</Text>
               <View style={{ flexDirection: "row", gap: 12 }}>
                 {question.options.map((option) => {
                   const selected = state[question.key] === option.value;
@@ -139,12 +141,12 @@ export default function SurveyScreen() {
                         paddingVertical: 14,
                         paddingHorizontal: 8,
                         borderRadius: 12,
-                        backgroundColor: selected ? "#4A90E2" : "#F5F5F5",
+                        backgroundColor: selected ? palette.button : palette.option,
                         opacity: pressed ? 0.7 : 1,
                         alignItems: "center",
                       })}
                     >
-                      <Text style={{ fontSize: 16, fontWeight: "500", color: selected ? "#FFFFFF" : "#333333" }}>
+                      <Text style={{ fontSize: 16, fontWeight: "500", color: selected ? palette.onButton : palette.text }}>
                         {option.label}
                       </Text>
                     </Pressable>
@@ -159,7 +161,7 @@ export default function SurveyScreen() {
 
           {/* Continue Button: always available, the hint explains what answers give */}
           <View style={{ gap: 10 }}>
-            <Text style={{ fontSize: 13, color: "#A0AEC0", textAlign: "center" }}>
+            <Text style={{ fontSize: 13, color: palette.subtle, textAlign: "center" }}>
               {answered === 0
                 ? "Без ответов подберём то, что подходит почти всегда"
                 : answered < 4
@@ -171,12 +173,12 @@ export default function SurveyScreen() {
               style={({ pressed }) => ({
                 paddingVertical: 16,
                 borderRadius: 12,
-                backgroundColor: "#4A90E2",
+                backgroundColor: palette.button,
                 opacity: pressed ? 0.7 : 1,
                 alignItems: "center",
               })}
             >
-              <Text style={{ fontSize: 18, fontWeight: "600", color: "#FFFFFF" }}>
+              <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>
                 Продолжить
               </Text>
             </Pressable>

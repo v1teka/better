@@ -3,10 +3,12 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 
 import { setSoundOn, useSoundOn } from "@/lib/sound-setting";
+import { usePalette } from "@/lib/theme-setting";
 
 /** Speaker button: turns the background sound and the gong on and off */
 export function SoundToggle() {
   const soundOn = useSoundOn();
+  const palette = usePalette();
 
   return (
     <Pressable
@@ -24,14 +26,14 @@ export function SoundToggle() {
         borderRadius: 20,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(255, 255, 255, 0.6)",
+        backgroundColor: palette.chip,
         opacity: pressed ? 0.6 : 1,
       })}
     >
       <Ionicons
         name={soundOn ? "volume-high-outline" : "volume-mute-outline"}
         size={22}
-        color="#4A90E2"
+        color={palette.accent}
       />
     </Pressable>
   );

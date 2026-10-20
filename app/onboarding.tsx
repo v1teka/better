@@ -13,10 +13,11 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
+import { LogoSwitch } from "@/components/logo-switch";
 import { markOnboardingDone } from "@/lib/onboarding";
+import { usePalette, useScheme } from "@/lib/theme-setting";
 import { requestTimerPermission } from "@/lib/timer-notification";
 
 const STEPS: { icon: React.ComponentProps<typeof Ionicons>["name"]; text: string }[] = [
@@ -34,6 +35,8 @@ const PAGES = 3;
  */
 export default function OnboardingScreen() {
   const router = useRouter();
+  const scheme = useScheme();
+  const palette = usePalette();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
@@ -64,7 +67,7 @@ export default function OnboardingScreen() {
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={["#FFE5D9", "#D9F7F1"]}
+        colors={palette.gradient}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
@@ -75,7 +78,7 @@ export default function OnboardingScreen() {
         <View style={{ height: 44, paddingHorizontal: 24, alignItems: "flex-end", justifyContent: "center" }}>
           {page < PAGES - 1 && (
             <Pressable onPress={finish} hitSlop={12}>
-              <Text style={{ fontSize: 16, color: "#718096" }}>Пропустить</Text>
+              <Text style={{ fontSize: 16, color: palette.muted }}>Пропустить</Text>
             </Pressable>
           )}
         </View>
@@ -91,18 +94,20 @@ export default function OnboardingScreen() {
         >
           {/* 1. What it gives */}
           <View style={{ width, height: pageHeight, paddingHorizontal: 32, justifyContent: "center", alignItems: "center", gap: 24 }}>
-            <Image source={require("../assets/images/logo.png")} style={{ width: 56, height: 100 }} contentFit="contain" />
-            <Text style={{ fontSize: 34, fontWeight: "700", color: "#2D3748", textAlign: "center" }}>
+            <View style={{ height: 100, justifyContent: "center" }}>
+              <LogoSwitch down={scheme === "dark"} />
+            </View>
+            <Text style={{ fontSize: 34, fontWeight: "700", color: palette.text, textAlign: "center" }}>
               Немного лучше — за пару минут
             </Text>
-            <Text style={{ fontSize: 17, lineHeight: 25, color: "#4A5568", textAlign: "center" }}>
+            <Text style={{ fontSize: 17, lineHeight: 25, color: palette.textSecondary, textAlign: "center" }}>
               Короткие практики под ваше состояние: от одной до десяти минут, без подготовки и где угодно.
             </Text>
           </View>
 
           {/* 2. How it works */}
           <View style={{ width, height: pageHeight, paddingHorizontal: 32, justifyContent: "center", gap: 28 }}>
-            <Text style={{ fontSize: 30, fontWeight: "700", color: "#2D3748", textAlign: "center" }}>
+            <Text style={{ fontSize: 30, fontWeight: "700", color: palette.text, textAlign: "center" }}>
               Как это работает
             </Text>
             {STEPS.map((step, index) => (
@@ -112,14 +117,14 @@ export default function OnboardingScreen() {
                     width: 52,
                     height: 52,
                     borderRadius: 26,
-                    backgroundColor: "rgba(255, 255, 255, 0.75)",
+                    backgroundColor: palette.iconCircle,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Ionicons name={step.icon} size={26} color="#4A90E2" />
+                  <Ionicons name={step.icon} size={26} color={palette.accent} />
                 </View>
-                <Text style={{ flex: 1, fontSize: 17, lineHeight: 24, color: "#2D3748" }}>
+                <Text style={{ flex: 1, fontSize: 17, lineHeight: 24, color: palette.text }}>
                   <Text style={{ fontWeight: "700" }}>{index + 1}. </Text>
                   {step.text}
                 </Text>
@@ -134,17 +139,17 @@ export default function OnboardingScreen() {
                 width: 96,
                 height: 96,
                 borderRadius: 48,
-                backgroundColor: "rgba(246, 173, 85, 0.25)",
+                backgroundColor: palette.warmCircle,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Ionicons name="notifications-outline" size={44} color="#DD6B20" />
+              <Ionicons name="notifications-outline" size={44} color={palette.warmIcon} />
             </View>
-            <Text style={{ fontSize: 30, fontWeight: "700", color: "#2D3748", textAlign: "center" }}>
+            <Text style={{ fontSize: 30, fontWeight: "700", color: palette.text, textAlign: "center" }}>
               Гонг подскажет
             </Text>
-            <Text style={{ fontSize: 17, lineHeight: 25, color: "#4A5568", textAlign: "center" }}>
+            <Text style={{ fontSize: 17, lineHeight: 25, color: palette.textSecondary, textAlign: "center" }}>
               Когда время практики выйдет, прозвучит гонг — даже если экран заблокирован. Для этого нужны уведомления. Других уведомлений не будет.
             </Text>
           </View>
@@ -160,7 +165,7 @@ export default function OnboardingScreen() {
                   width: i === page ? 20 : 8,
                   height: 8,
                   borderRadius: 4,
-                  backgroundColor: i === page ? "#4A90E2" : "rgba(74, 144, 226, 0.25)",
+                  backgroundColor: i === page ? palette.button : palette.dotInactive,
                 }}
               />
             ))}
@@ -172,12 +177,12 @@ export default function OnboardingScreen() {
               style={({ pressed }) => ({
                 paddingVertical: 16,
                 borderRadius: 12,
-                backgroundColor: "#4A90E2",
+                backgroundColor: palette.button,
                 opacity: pressed ? 0.7 : 1,
                 alignItems: "center",
               })}
             >
-              <Text style={{ fontSize: 18, fontWeight: "600", color: "#FFFFFF" }}>Далее</Text>
+              <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>Далее</Text>
             </Pressable>
           ) : (
             <View style={{ gap: 12 }}>
@@ -186,15 +191,15 @@ export default function OnboardingScreen() {
                 style={({ pressed }) => ({
                   paddingVertical: 16,
                   borderRadius: 12,
-                  backgroundColor: "#4A90E2",
+                  backgroundColor: palette.button,
                   opacity: pressed ? 0.7 : 1,
                   alignItems: "center",
                 })}
               >
-                <Text style={{ fontSize: 18, fontWeight: "600", color: "#FFFFFF" }}>Включить гонг</Text>
+                <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>Включить гонг</Text>
               </Pressable>
               <Pressable onPress={finish} hitSlop={8} style={{ alignItems: "center", paddingVertical: 4 }}>
-                <Text style={{ fontSize: 16, color: "#718096" }}>Не сейчас</Text>
+                <Text style={{ fontSize: 16, color: palette.muted }}>Не сейчас</Text>
               </Pressable>
             </View>
           )}

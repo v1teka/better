@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Platform } from "react-native";
+import { View, Text, Pressable, Platform, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -10,20 +10,24 @@ import Animated, {
   FadeOut,
   FadeOutUp,
   ZoomIn,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withRepeat,
   withSpring,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 import { useEffect, useRef, useState } from "react";
-import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { LogoSwitch } from "@/components/logo-switch";
 import { ALL_BETTER_WORDS } from "@/constants/better-words";
+import { PALETTES, type Palette } from "@/constants/palette";
 import { addFeedback } from "@/lib/history";
 import { getPracticeById } from "@/lib/practice-selector";
+import { toggleScheme, usePalette, useScheme } from "@/lib/theme-setting";
 import type { Practice, Rating } from "@/types/practice";
 
 /**
@@ -76,14 +80,52 @@ function randomWord(except?: string): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// How long day turns to night (and back) after the logo switch
+const THEME_FADE_MS = 700;
+
+// Soft round spots over the gradient; their colors come from the palette
+const BLOB_SPOTS = [
+  { size: 280, top: -60, left: -80 },
+  { size: 200, top: 120, right: -50 },
+  { size: 240, bottom: 80, left: -60 },
+  { size: 180, bottom: 40, right: -30 },
+] as const;
+
+function Backdrop({ palette }: { palette: Palette }) {
+  return (
+    <>
+      <LinearGradient
+        colors={palette.gradient}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {BLOB_SPOTS.map(({ size, ...spot }, index) => (
+        <View
+          key={index}
+          style={{
+            position: "absolute",
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: palette.blobs[index],
+            ...spot,
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
 // The window the changing word scrolls through: fixed, so «Лучше» never moves
 const WORD_WINDOW_HEIGHT = 44;
 
 /**
  * «Лучше» stays in place; the second word under it changes like a ticker:
- * the old one slides up and fades, the new one comes up from below
+ * the old one slides up and fades, the new one comes up from below.
+ * `night` goes 0 → 1 as the theme turns dark, so the colors change smoothly.
  */
-function BetterTitle() {
+function BetterTitle({ night }: { night: SharedValue<number> }) {
   const [word, setWord] = useState(() => randomWord());
 
   useEffect(() => {
@@ -91,11 +133,18 @@ function BetterTitle() {
     return () => clearInterval(interval);
   }, []);
 
+  const titleColor = useAnimatedStyle(() => ({
+    color: interpolateColor(night.value, [0, 1], [PALETTES.light.text, PALETTES.dark.text]),
+  }));
+  const wordColor = useAnimatedStyle(() => ({
+    color: interpolateColor(night.value, [0, 1], [PALETTES.light.accent, PALETTES.dark.accent]),
+  }));
+
   return (
     <View style={{ alignItems: "center", alignSelf: "stretch" }}>
-      <Text style={{ fontSize: 48, fontWeight: "700", color: "#2D3748", letterSpacing: -1 }}>
+      <Animated.Text style={[{ fontSize: 48, fontWeight: "700", letterSpacing: -1 }, titleColor]}>
         Лучше
-      </Text>
+      </Animated.Text>
       <View
         style={{
           height: WORD_WINDOW_HEIGHT,
@@ -111,16 +160,18 @@ function BetterTitle() {
           exiting={FadeOutUp.duration(500).easing(Easing.in(Easing.cubic))}
           numberOfLines={1}
           adjustsFontSizeToFit
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            fontSize: 32,
-            fontWeight: "600",
-            color: "#4A90E2",
-            letterSpacing: -0.5,
-          }}
+          style={[
+            {
+              position: "absolute",
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              fontSize: 32,
+              fontWeight: "600",
+              letterSpacing: -0.5,
+            },
+            wordColor,
+          ]}
         >
           {word}
         </Animated.Text>
@@ -152,6 +203,7 @@ function EmojiChoice({
   dimmed: boolean;
   onPress: () => void;
 }) {
+  const palette = usePalette();
   const breath = useSharedValue(0);
   const bloom = useSharedValue(0);
 
@@ -204,7 +256,7 @@ function EmojiChoice({
             width: 56,
             height: 56,
             borderRadius: 28,
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            backgroundColor: palette.bubble,
             alignItems: "center",
             justifyContent: "center",
           },
@@ -229,6 +281,11 @@ export default function HomeScreen() {
   const [selected, setSelected] = useState<Rating | null>(null);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
+  const scheme = useScheme();
+  const palette = usePalette();
+  // 0 — day, 1 — night: the backdrop and the title follow it smoothly
+  const night = useSharedValue(scheme === "dark" ? 1 : 0);
+
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
 
@@ -236,6 +293,15 @@ export default function HomeScreen() {
     checkFeedbackFlag();
     return () => timeouts.current.forEach(clearTimeout);
   }, []);
+
+  useEffect(() => {
+    night.value = withTiming(scheme === "dark" ? 1 : 0, {
+      duration: THEME_FADE_MS,
+      easing: Easing.inOut(Easing.ease),
+    });
+  }, [scheme]);
+
+  const nightLayerStyle = useAnimatedStyle(() => ({ opacity: night.value }));
 
   useEffect(() => {
     if (phase !== "intro") return;
@@ -286,6 +352,12 @@ export default function HomeScreen() {
     router.push("/survey");
   };
 
+  // The logo is a switch: knob up — light theme, as on the app icon; down — dark
+  const handleLogoPress = () => {
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleScheme();
+  };
+
   const handleRating = (rating: Rating) => {
     if (selected) return;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -308,57 +380,11 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={["#FFE5D9", "#D9F7F1"]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-
-      <View
-        style={{
-          position: "absolute",
-          width: 280,
-          height: 280,
-          borderRadius: 140,
-          backgroundColor: "rgba(255, 255, 255, 0.35)",
-          top: -60,
-          left: -80,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          width: 200,
-          height: 200,
-          borderRadius: 100,
-          backgroundColor: "rgba(152, 216, 200, 0.25)",
-          top: 120,
-          right: -50,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          width: 240,
-          height: 240,
-          borderRadius: 120,
-          backgroundColor: "rgba(255, 182, 193, 0.2)",
-          bottom: 80,
-          left: -60,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          width: 180,
-          height: 180,
-          borderRadius: 90,
-          backgroundColor: "rgba(255, 255, 255, 0.3)",
-          bottom: 40,
-          right: -30,
-        }}
-      />
+      {/* Day backdrop, with the night one fading in over it */}
+      <Backdrop palette={PALETTES.light} />
+      <Animated.View style={[StyleSheet.absoluteFill, nightLayerStyle]}>
+        <Backdrop palette={PALETTES.dark} />
+      </Animated.View>
 
       <SafeAreaView style={{ flex: 1 }}>
         <View style={{ flex: 1 }}>
@@ -375,17 +401,19 @@ export default function HomeScreen() {
                 paddingBottom: 80,
               }}
             >
-              {/* Logo — at top */}
-              <Animated.View style={logoAnimatedStyle}>
-                <Image
-                  source={require("../assets/images/logo.png")}
-                  style={{ width: 56, height: 100 }}
-                  contentFit="contain"
+              {/* Logo — at top; it is also the light / dark switch */}
+              <Animated.View
+                style={[{ height: 100, justifyContent: "center" }, logoAnimatedStyle]}
+              >
+                <LogoSwitch
+                  down={scheme === "dark"}
+                  onPress={handleLogoPress}
+                  accessibilityLabel="Тёмная тема"
                 />
               </Animated.View>
 
               {/* «Лучше» + changing word */}
-              <BetterTitle />
+              <BetterTitle night={night} />
 
               <Animated.View entering={FadeInDown.delay(250).springify().damping(16)}>
                 <Pressable
@@ -394,10 +422,10 @@ export default function HomeScreen() {
                     width: 220,
                     height: 60,
                     borderRadius: 30,
-                    backgroundColor: pressed ? "#3A7BD5" : "#4A90E2",
+                    backgroundColor: pressed ? palette.buttonPressed : palette.button,
                     justifyContent: "center",
                     alignItems: "center",
-                    shadowColor: "#4A90E2",
+                    shadowColor: palette.button,
                     shadowOffset: { width: 0, height: 8 },
                     shadowOpacity: 0.4,
                     shadowRadius: 20,
@@ -409,7 +437,7 @@ export default function HomeScreen() {
                     style={{
                       fontSize: 20,
                       fontWeight: "700",
-                      color: "#FFFFFF",
+                      color: palette.onButton,
                       letterSpacing: 0.3,
                     }}
                   >
@@ -439,7 +467,7 @@ export default function HomeScreen() {
                 style={{
                   width: 300,
                   borderRadius: 28,
-                  backgroundColor: "rgba(255, 255, 255, 0.92)",
+                  backgroundColor: palette.card,
                   paddingVertical: 32,
                   paddingHorizontal: 24,
                   shadowColor: "#000",
@@ -448,7 +476,7 @@ export default function HomeScreen() {
                   shadowRadius: 20,
                   elevation: 8,
                   borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.6)",
+                  borderColor: palette.cardBorder,
                   alignItems: "center",
                 }}
               >
@@ -458,7 +486,7 @@ export default function HomeScreen() {
                     fontWeight: "600",
                     letterSpacing: 1.5,
                     textTransform: "uppercase",
-                    color: "#4CAF50",
+                    color: palette.success,
                     marginBottom: 8,
                   }}
                 >
@@ -468,7 +496,7 @@ export default function HomeScreen() {
                   <Text
                     style={{
                       fontSize: 15,
-                      color: "#718096",
+                      color: palette.muted,
                       textAlign: "center",
                       marginBottom: 16,
                     }}
@@ -476,7 +504,7 @@ export default function HomeScreen() {
                     {practice.title}
                   </Text>
                 )}
-                <Text style={{ fontSize: 22, fontWeight: "600", color: "#2D3748", marginBottom: 24 }}>
+                <Text style={{ fontSize: 22, fontWeight: "600", color: palette.text, marginBottom: 24 }}>
                   Как прошло?
                 </Text>
                 <View style={{ flexDirection: "row", gap: 20, marginBottom: 24 }}>
@@ -495,7 +523,7 @@ export default function HomeScreen() {
                   ))}
                 </View>
                 <Pressable onPress={handleSkip} hitSlop={10} disabled={selected != null}>
-                  <Text style={{ fontSize: 14, color: "#A0AEC0" }}>Пропустить</Text>
+                  <Text style={{ fontSize: 14, color: palette.subtle }}>Пропустить</Text>
                 </Pressable>
               </View>
             </Animated.View>
@@ -536,7 +564,7 @@ export default function HomeScreen() {
                     width: 56,
                     height: 56,
                     borderRadius: 28,
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    backgroundColor: palette.bubble,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
@@ -546,13 +574,13 @@ export default function HomeScreen() {
               </Animated.View>
               <Animated.Text
                 entering={FadeInDown.delay(150).duration(500)}
-                style={{ fontSize: 26, fontWeight: "700", color: "#2D3748", textAlign: "center" }}
+                style={{ fontSize: 26, fontWeight: "700", color: palette.text, textAlign: "center" }}
               >
                 {reply.reply}
               </Animated.Text>
               <Animated.Text
                 entering={FadeInDown.delay(300).duration(500)}
-                style={{ fontSize: 15, color: "#718096", textAlign: "center" }}
+                style={{ fontSize: 15, color: palette.muted, textAlign: "center" }}
               >
                 {reply.note}
               </Animated.Text>
