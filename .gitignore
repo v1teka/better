@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+.env
+.env*.local
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.ipa
+*.apk
+*.aab
+.DS_Store

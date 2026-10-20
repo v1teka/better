@@ -1,5 +1,5 @@
 // Load environment variables with proper priority (system > .env)
-import "./scripts/load-env.js";
+require("./scripts/load-env.js");
 import type { ExpoConfig } from "expo/config";
 
 // Bundle ID format: space.manus.<project_name_dots>.<timestamp>
@@ -41,7 +41,7 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.0",
+  version: "1.1.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -65,7 +65,6 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
     intentFilters: [
       {
         action: "VIEW",
@@ -90,14 +89,8 @@ const config: ExpoConfig = {
     [
       "expo-audio",
       {
-        microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
-      },
-    ],
-    [
-      "expo-video",
-      {
-        supportsBackgroundPlayback: true,
-        supportsPictureInPicture: true,
+        // The app only plays a gong sound; it never records
+        microphonePermission: false,
       },
     ],
     [
@@ -122,6 +115,12 @@ const config: ExpoConfig = {
       },
     ],
   ],
+  owner: "v1teka",
+  extra: {
+    eas: {
+      projectId: "ab1346dd-fd5c-4e6b-975f-9528ca9e7526",
+    },
+  },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,
