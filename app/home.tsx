@@ -12,6 +12,7 @@ import Animated, {
 import { useEffect, useState } from "react";
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { addFeedback, type Rating } from "@/lib/feedback-history";
 
 type FeedbackState = "normal" | "feedback" | "thankyou";
 
@@ -119,9 +120,12 @@ export default function HomeScreen() {
     }, delay);
   };
 
-  const handleEmojiSelect = async (rating: string) => {
+  const handleEmojiSelect = async (rating: Rating) => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedEmoji(rating);
+    AsyncStorage.getItem("practiceId")
+      .then((practiceId) => (practiceId ? addFeedback(practiceId, rating) : undefined))
+      .catch(() => {});
     setTimeout(() => {
       // Animate card out first, then switch to thankyou
       cardOpacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) });
@@ -286,9 +290,9 @@ export default function HomeScreen() {
                 </Text>
                 <View style={{ flexDirection: "row", gap: 16, marginBottom: 16 }}>
                   {[
-                    { emoji: "\ud83d\ude14", rating: "bad" },
-                    { emoji: "\ud83d\ude10", rating: "neutral" },
-                    { emoji: "\ud83d\ude0a", rating: "good" },
+                    { emoji: "\ud83d\ude14", rating: "bad" as const },
+                    { emoji: "\ud83d\ude10", rating: "neutral" as const },
+                    { emoji: "\ud83d\ude0a", rating: "good" as const },
                   ].map((item) => (
                     <Pressable
                       key={item.rating}
