@@ -1,23 +1,51 @@
-import { View, Text, ScrollView, Pressable, Platform } from "react-native";
+import { View, Text, ScrollView, Pressable, Platform, AppState } from "react-native";
 import { Redirect, useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
-import type { Practice } from "@/types/practice";
-import { MarkdownText } from "@/components/markdown-text";
-import { getPracticeById } from "@/lib/practice-selector";
-import { usePracticeTimer } from "@/lib/practice-timer";
-import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
+import { useAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import type { Practice } from "@/types/practice";
+import { MarkdownText } from "@/components/markdown-text";
+import { CollapsibleCard, GlassCard } from "@/components/glass-card";
+import { HintLabel } from "@/components/hint-label";
+import { SoundToggle } from "@/components/sound-toggle";
+import { getPracticeById } from "@/lib/practice-selector";
+import { usePracticeTimer } from "@/lib/practice-timer";
+import { useSoundOn } from "@/lib/sound-setting";
+
 const gongSound = require("@/assets/sounds/gong.mp3");
+const ambientSound = require("@/assets/sounds/ambient.m4a");
+
+// The background sound stays quiet: it sets the mood, the gong marks the end
+const AMBIENT_VOLUME = 0.35;
+
+/** Lower the volume to zero over `ms`, then pause */
+function fadeOut(player: AudioPlayer, ms: number) {
+  const steps = 10;
+  let step = 0;
+  const startVolume = player.volume;
+  const interval = setInterval(() => {
+    step++;
+    try {
+      player.volume = startVolume * (1 - step / steps);
+      if (step >= steps) {
+        clearInterval(interval);
+        player.pause();
+        player.volume = AMBIENT_VOLUME;
+      }
+    } catch {
+      clearInterval(interval);
+    }
+  }, ms / steps);
+}
 
 /**
  * Practice Execution Screen
- * Displays detailed practice information with glassmorphism cards
- * and a countdown timer based on the user-selected time.
+ * Timer with background sound, the practice steps, the less important parts folded.
  */
 export default function PracticeScreen() {
   const params = useLocalSearchParams<{ practiceId?: string; selectedTime?: string }>();
@@ -32,35 +60,64 @@ export default function PracticeScreen() {
 
 function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSeconds: number }) {
   const isCompletingRef = useRef(false);
+  const soundOn = useSoundOn();
+  const soundOnRef = useRef(soundOn);
+  soundOnRef.current = soundOn;
 
-  // Audio player for gong sound
-  const player = useAudioPlayer(gongSound);
-  const playerRef = useRef(player);
-  playerRef.current = player;
+  const gong = useAudioPlayer(gongSound);
+  const gongRef = useRef(gong);
+  gongRef.current = gong;
+
+  const ambient = useAudioPlayer(ambientSound);
+  const ambientRef = useRef(ambient);
+  ambientRef.current = ambient;
 
   const { secondsLeft, isRunning, isDone, start, toggle, stop } = usePracticeTimer({
     totalSeconds,
-    notification: { title: practice.title, body: "Время вышло. Можно завершать" },
+    notification: { title: practice.title, body: "Время вышло. Можно завершать", sound: soundOn },
     onFinish: (late) => {
+      fadeOut(ambientRef.current, 1500);
       // If the app was in the background, the notification has already rung
       if (late) return;
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (!soundOnRef.current) return;
       try {
-        playerRef.current.seekTo(0);
-        playerRef.current.play();
+        gongRef.current.seekTo(0);
+        gongRef.current.play();
       } catch (_) {}
     },
   });
 
-  // Enable audio in iOS silent mode
+  // Enable audio in iOS silent mode; the background sound loops quietly
   useEffect(() => {
     if (Platform.OS !== "web") {
       setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
     }
+    try {
+      ambientRef.current.loop = true;
+      ambientRef.current.volume = AMBIENT_VOLUME;
+    } catch (_) {}
     return () => {
-      try { playerRef.current.remove(); } catch (_) {}
+      try { ambientRef.current.pause(); } catch (_) {}
+      try { gongRef.current.remove(); } catch (_) {}
     };
   }, []);
+
+  // The background sound plays while the timer runs and sound is on.
+  // iOS pauses it in the background, so it resumes when the app is back.
+  useEffect(() => {
+    const sync = () => {
+      try {
+        if (isRunning && soundOn) ambientRef.current.play();
+        else if (!isDone) ambientRef.current.pause();
+      } catch (_) {}
+    };
+    sync();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") sync();
+    });
+    return () => subscription.remove();
+  }, [isRunning, isDone, soundOn]);
 
   // Start timer automatically when screen mounts
   useEffect(() => {
@@ -73,6 +130,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
     isCompletingRef.current = true;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     stop();
+    try { ambientRef.current.pause(); } catch (_) {}
     try {
       await AsyncStorage.setItem("showFeedback", "true");
       await AsyncStorage.setItem("practiceId", practice.id ?? "");
@@ -95,16 +153,6 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
 
   const insets = useSafeAreaInsets();
 
-  // Category labels
-  const categoryLabels: Record<string, string> = {
-    recovery: "ВОССТАНОВЛЕНИЕ",
-    activation: "АКТИВАЦИЯ",
-    focus: "ФОКУС",
-    body: "ТЕЛО",
-    creative: "ТВОРЧЕСТВО",
-    sensory: "ЧУВСТВА",
-  };
-
   return (
     <View className="flex-1">
       {/* Gradient Background */}
@@ -115,8 +163,17 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
         className="absolute inset-0"
       />
 
-      {/* Status Bar Space — respects Dynamic Island / notch */}
-      <View style={{ height: insets.top + 16 }} />
+      {/* Top bar below the Dynamic Island / notch: sound switch on the right */}
+      <View
+        style={{
+          paddingTop: insets.top + 4,
+          paddingHorizontal: 16,
+          flexDirection: "row",
+          justifyContent: "flex-end",
+        }}
+      >
+        <SoundToggle />
+      </View>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -128,13 +185,11 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="items-center mb-6">
-          <Text
-            className="text-[11px] font-semibold tracking-widest uppercase mb-2"
-            style={{ color: "#4A90E2" }}
-          >
-            {categoryLabels[practice.category] || practice.category}
-          </Text>
+        <View className="items-center mb-6" style={{ gap: 10 }}>
+          <HintLabel
+            label="Сейчас выполняете"
+            hint="Следуйте шагам ниже, пока идёт таймер. Когда время выйдет, прозвучит гонг — даже на заблокированном экране. Закончили раньше — нажмите «Завершить»."
+          />
           <Text className="text-[28px] font-bold text-center leading-tight text-[#2D3748]">
             {practice.title}
           </Text>
@@ -223,110 +278,30 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
           )}
         </View>
 
-        {/* Section: Description */}
-        <View className="mb-6">
-          <Text className="text-[13px] font-semibold text-[#2D3748] mb-2">
-            Описание
-          </Text>
-          <View
-            className="rounded-2xl p-4 border border-white/40"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.65)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <MarkdownText>{practice.description}</MarkdownText>
-          </View>
-        </View>
+        <GlassCard title="Описание">
+          <MarkdownText>{practice.description}</MarkdownText>
+        </GlassCard>
 
-        {/* Section: First Step */}
-        <View className="mb-6">
-          <Text className="text-[13px] font-semibold text-[#2D3748] mb-2">
-            Первый шаг
-          </Text>
-          <View
-            className="rounded-2xl p-4 border border-white/40"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.65)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <MarkdownText>{practice.firstStep}</MarkdownText>
-          </View>
-        </View>
+        <GlassCard title="Первый шаг">
+          <MarkdownText>{practice.firstStep}</MarkdownText>
+        </GlassCard>
 
-        {/* Section: Completion */}
-        <View className="mb-6">
-          <Text className="text-[13px] font-semibold text-[#2D3748] mb-2">
-            Завершение
-          </Text>
-          <View
-            className="rounded-2xl p-4 border border-white/40"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.65)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <MarkdownText>{practice.finish}</MarkdownText>
-          </View>
-        </View>
-
-        {/* Section: Expected Effect */}
-        <View className="mb-6">
-          <Text className="text-[13px] font-semibold text-[#2D3748] mb-2">
-            Ожидаемый эффект
-          </Text>
-          <View
-            className="rounded-2xl p-4 border border-white/40"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.65)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <MarkdownText>{practice.expectedEffect}</MarkdownText>
-          </View>
-        </View>
-
-        {/* Section: Simplified Version */}
-        <View className="mb-8">
-          <Text className="text-[13px] font-semibold text-[#2D3748] mb-2">
-            Упрощённая версия
-          </Text>
-          <View
-            className="rounded-2xl p-4 border border-white/40"
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.65)",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.08,
-              shadowRadius: 8,
-              elevation: 3,
-            }}
-          >
-            <MarkdownText>{practice.simpleVersion}</MarkdownText>
-          </View>
-        </View>
+        {/* Less needed during the practice: folded until tapped */}
+        <CollapsibleCard title="Завершение">
+          <MarkdownText>{practice.finish}</MarkdownText>
+        </CollapsibleCard>
+        <CollapsibleCard title="Ожидаемый эффект">
+          <MarkdownText>{practice.expectedEffect}</MarkdownText>
+        </CollapsibleCard>
+        <CollapsibleCard title="Упрощённая версия">
+          <MarkdownText>{practice.simpleVersion}</MarkdownText>
+        </CollapsibleCard>
 
         {/* Complete Button */}
         <Pressable
           onPress={handleComplete}
           style={({ pressed }) => ({
+            marginTop: 16,
             paddingVertical: 16,
             borderRadius: 12,
             backgroundColor: "#4A90E2",

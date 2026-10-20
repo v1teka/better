@@ -10,13 +10,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 import { isLateFinish, secondsLeftAt } from "./timer-clock";
-import { cancelTimerEnd, scheduleTimerEnd } from "./timer-notification";
+import { cancelTimerEnd, scheduleTimerEnd, type TimerNotification } from "./timer-notification";
 
 type Options = {
   totalSeconds: number;
   /** Called once when time runs out; `late` is true if the app was in the background then */
   onFinish: (late: boolean) => void;
-  notification: { title: string; body: string };
+  notification: TimerNotification;
 };
 
 export function usePracticeTimer({ totalSeconds, onFinish, notification }: Options) {
@@ -88,6 +88,11 @@ export function usePracticeTimer({ totalSeconds, onFinish, notification }: Optio
       subscription.remove();
     };
   }, [isRunning, tick]);
+
+  // Sound switched mid-practice: replace the scheduled notification
+  useEffect(() => {
+    if (endAtRef.current != null) scheduleTimerEnd(endAtRef.current, notificationRef.current);
+  }, [notification.sound]);
 
   useEffect(() => stop, [stop]);
 
