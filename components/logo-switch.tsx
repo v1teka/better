@@ -10,10 +10,11 @@ import Animated, {
 } from "react-native-reanimated";
 
 import {
-  EnergyFlow,
+  EnergyFlowLayer,
   FLOW_DURATION_MS,
   FLOW_HEIGHT,
   FLOW_WIDTH,
+  runFlow,
   type FlowDirection,
 } from "@/components/energy-flow";
 
@@ -24,7 +25,7 @@ import {
  *
  * `down` moves the knob below the horizon. With `onPress` the logo works as a switch:
  * the knob stretches while pressed, like the iOS one, and springs to the other end,
- * and energy flows around it the way the knob goes (components/energy-flow.tsx).
+ * and energy flows through and around it the way the knob goes (components/energy-flow.tsx).
  */
 export function LogoSwitch({
   down,
@@ -49,8 +50,9 @@ export function LogoSwitch({
   const pressed = useSharedValue(0);
 
   const reduceMotion = useReducedMotion();
-  const [flow, setFlow] = useState<{ id: number; direction: FlowDirection } | null>(null);
+  const [flow, setFlow] = useState<FlowDirection | null>(null);
   const flowId = useRef(0);
+  const flowClock = useSharedValue(0);
 
   useEffect(() => {
     position.value = withSpring(down ? 1 : 0, { damping: 16, stiffness: 170, mass: 0.9 });
@@ -126,12 +128,22 @@ export function LogoSwitch({
 
   if (!onPress) return logo;
 
+  const flowCanvas = {
+    position: "absolute",
+    left: (width - FLOW_WIDTH) / 2,
+    top: (height - FLOW_HEIGHT) / 2,
+    pointerEvents: "none",
+  } as const;
+
   const handlePress = () => {
     if (!reduceMotion) {
-      // Each tap starts a new run; a tap mid-run replaces it
+      // Each tap starts a new run; a tap mid-run restarts it the other way
       const id = ++flowId.current;
-      setFlow({ id, direction: down ? "up" : "down" });
-      setTimeout(() => setFlow((f) => (f?.id === id ? null : f)), FLOW_DURATION_MS + 100);
+      setFlow(down ? "up" : "down");
+      runFlow(flowClock);
+      setTimeout(() => {
+        if (flowId.current === id) setFlow(null);
+      }, FLOW_DURATION_MS + 100);
     }
     onPress();
   };
@@ -150,20 +162,31 @@ export function LogoSwitch({
       accessibilityState={{ checked: down }}
       accessibilityLabel={accessibilityLabel}
     >
+      {/* The flow behind the switch, the switch, and the flow through it on top */}
       <View style={{ width, height }}>
         {flow && (
-          <View
-            style={{
-              position: "absolute",
-              left: (width - FLOW_WIDTH) / 2,
-              top: (height - FLOW_HEIGHT) / 2,
-              pointerEvents: "none",
-            }}
-          >
-            <EnergyFlow key={flow.id} direction={flow.direction} />
+          <View style={flowCanvas}>
+            <EnergyFlowLayer
+              direction={flow}
+              clock={flowClock}
+              layer="back"
+              bodyWidth={width}
+              bodyHeight={height}
+            />
           </View>
         )}
         {logo}
+        {flow && (
+          <View style={flowCanvas}>
+            <EnergyFlowLayer
+              direction={flow}
+              clock={flowClock}
+              layer="front"
+              bodyWidth={width}
+              bodyHeight={height}
+            />
+          </View>
+        )}
       </View>
     </Pressable>
   );
