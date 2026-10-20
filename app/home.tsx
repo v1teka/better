@@ -12,7 +12,8 @@ import Animated, {
 import { useEffect, useState } from "react";
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { addFeedback, type Rating } from "@/lib/feedback-history";
+import { addFeedback } from "@/lib/history";
+import type { Rating } from "@/types/practice";
 
 type FeedbackState = "normal" | "feedback" | "thankyou";
 

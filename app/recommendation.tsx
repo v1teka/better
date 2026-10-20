@@ -4,12 +4,34 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 
 import { ScreenContainer } from "@/components/screen-container";
-import { pickPractice } from "@/lib/practice-selector";
-import { practiceDuration } from "@/lib/scoring";
-import type { Practice, UserState, Energy, Focus, Tension, Time } from "@/types/practice";
+import { HintLabel } from "@/components/hint-label";
+import { getSelectionHistory, rememberOffered } from "@/lib/history";
+import { pickPractice, practiceDuration } from "@/lib/practice-selector";
+import { formatMinutes } from "@/lib/utils";
+import type { Practice, UserState, Energy, Focus, Tension, SurveyTime, Time } from "@/types/practice";
+
+const CATEGORY_LABELS: Record<string, string> = {
+  recovery: "восстановление",
+  activation: "активация",
+  focus: "фокус",
+  body: "тело",
+  creative: "творчество",
+  sensory: "чувства",
+};
+
+function parseState(params: Record<string, string | string[] | undefined>): UserState {
+  const value = (key: string) => (typeof params[key] === "string" && params[key] ? (params[key] as string) : null);
+  const time = parseInt(value("time") ?? "", 10);
+  return {
+    energy: value("energy") as Energy | null,
+    focus: value("focus") as Focus | null,
+    tension: value("tension") as Tension | null,
+    time: [2, 5, 10].includes(time) ? (time as SurveyTime) : null,
+  };
+}
 
 /**
- * Recommendation Screen - Shows selected practice
+ * Recommendation Screen - Shows the practice picked for the answers
  * Design: Minimal, centered, large typography
  */
 export default function RecommendationScreen() {
@@ -19,19 +41,20 @@ export default function RecommendationScreen() {
   const [practice, setPractice] = useState<Practice | null>(null);
   const [duration, setDuration] = useState<Time | null>(null);
 
-  // Pick the practice and its timer length once per screen instance.
-  // Time is an upper bound; without it the practice is not limited by time.
+  // Pick once per screen instance, taking into account recent offers and ratings
   useEffect(() => {
-    const parsedTime = parseInt(params.time as string, 10);
-    const state: UserState = {
-      energy: params.energy as Energy,
-      focus: params.focus as Focus,
-      tension: params.tension as Tension,
-      time: isNaN(parsedTime) ? null : (parsedTime as Time),
+    const state = parseState(params);
+    let cancelled = false;
+    getSelectionHistory().then((history) => {
+      if (cancelled) return;
+      const selected = pickPractice(state, history);
+      setPractice(selected);
+      setDuration(practiceDuration(selected, state.time));
+      rememberOffered(selected.id);
+    });
+    return () => {
+      cancelled = true;
     };
-    const selected = pickPractice(state);
-    setPractice(selected);
-    setDuration(practiceDuration(selected, state.time));
   }, []);
 
   const triggerMedium = () => {
@@ -55,25 +78,15 @@ export default function RecommendationScreen() {
     });
   };
 
-  if (!practice) {
+  if (!practice || !duration) {
     return (
       <ScreenContainer>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontSize: 16, color: "#888888" }}>Загрузка...</Text>
+          <Text style={{ fontSize: 16, color: "#888888" }}>Подбираем практику…</Text>
         </View>
       </ScreenContainer>
     );
   }
-
-  // Category labels in Russian
-  const categoryLabels: Record<string, string> = {
-    recovery: "восстановление",
-    activation: "активация",
-    focus: "фокус",
-    body: "тело",
-    creative: "творчество",
-    sensory: "сенсорика",
-  };
 
   return (
     <ScreenContainer>
@@ -94,12 +107,16 @@ export default function RecommendationScreen() {
         </Pressable>
 
         {/* Practice Display - Centered */}
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 8 }}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", gap: 16 }}>
+          <HintLabel
+            label="Предложено вам"
+            hint="Эту практику мы подобрали по вашим ответам. Нажмите «Начать» — откроются таймер и шаги. Не подходит — вернитесь и ответьте по-другому."
+          />
           <Text style={{ fontSize: 36, fontWeight: "700", color: "#333333", textAlign: "center", paddingHorizontal: 16 }}>
             {practice.title}
           </Text>
-          <Text style={{ fontSize: 14, color: "#888888" }}>
-            {categoryLabels[practice.category] || practice.category}
+          <Text style={{ fontSize: 15, color: "#888888" }}>
+            {formatMinutes(duration)} · {CATEGORY_LABELS[practice.category] || practice.category}
           </Text>
         </View>
 

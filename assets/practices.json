@@ -8,11 +8,26 @@
     "expectedEffect": "Ощущение свежести, мягкий возврат в настоящий момент.",
     "simpleVersion": "Сделать три глотка воды",
     "category": "sensory",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      1,
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше ощущать"
   },
   {
     "id": "breathe_10",
@@ -23,11 +38,23 @@
     "expectedEffect": "Снижение тревоги, ясность в голове.",
     "simpleVersion": "Три глубоких вдоха и выдоха",
     "category": "recovery",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше дышать"
   },
   {
     "id": "clean_surface",
@@ -38,11 +65,23 @@
     "expectedEffect": "Чувство контроля, снижение визуального шума.",
     "simpleVersion": "Убрать одну лишнюю вещь со стола",
     "category": "focus",
-    "time": [5],
-    "energy": ["normal"],
-    "focus": ["stuck", "scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше думать"
   },
   {
     "id": "wipe_table",
@@ -53,26 +92,54 @@
     "expectedEffect": "Перезагрузка внимания, готовность к новому этапу.",
     "simpleVersion": "Смахнуть крошки со стола",
     "category": "focus",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше в моменте"
   },
   {
     "id": "go_outside_5m",
-    "title": "Выйти на улицу на 5 минут",
+    "title": "Выйти на улицу",
     "description": "**Смена обстановки и свежий воздух** перезапускают восприятие. Позволяет выйти из замкнутого пространства своих мыслей и комнаты.",
     "firstStep": "Оденься и выйди за дверь",
     "finish": "Вернись в помещение, осознанно закрыв за собой дверь.",
     "expectedEffect": "Обновление восприятия, прилив свежих сил.",
     "simpleVersion": "Выйти на балкон или постоять у открытого окна",
     "category": "recovery",
-    "time": [5],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с миром"
   },
   {
     "id": "walk_around_house",
@@ -83,11 +150,25 @@
     "expectedEffect": "Сброс напряжения, отдых для глаз.",
     "simpleVersion": "Спуститься и подняться на один этаж",
     "category": "recovery",
-    "time": [5, 10],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше мыслить"
   },
   {
     "id": "take_shower",
@@ -98,11 +179,23 @@
     "expectedEffect": "Обновление, смывание физического и морального груза.",
     "simpleVersion": "Помыть руки до локтей тёплой водой",
     "category": "body",
-    "time": [10],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      10
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше восстанавливаться"
   },
   {
     "id": "wash_face_cold",
@@ -113,11 +206,24 @@
     "expectedEffect": "Резкое пробуждение, снижение паники или сильной тревоги.",
     "simpleVersion": "Приложить холодное влажное полотенце к лицу",
     "category": "activation",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      1,
+      2
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше пробуждаться"
   },
   {
     "id": "squats_10",
@@ -128,26 +234,52 @@
     "expectedEffect": "Прилив энергии, выход из ступора.",
     "simpleVersion": "Сделать 3 медленных приседания",
     "category": "activation",
-    "time": [2],
-    "energy": ["normal", "high"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше наполняться"
   },
   {
     "id": "stretch_2m",
-    "title": "Потянуться 2 минуты",
+    "title": "Потянуться",
     "description": "**Потягушки** раскрывают грудную клетку и снимают мышечные зажимы. Мягкая активация тела без сильной нагрузки.",
     "firstStep": "Встань и потяни руки высоко вверх",
     "finish": "Сбрось напряжение с рук и плеч, сделай выдох.",
     "expectedEffect": "Свобода в теле, снятие мышечных блоков.",
     "simpleVersion": "Потянуться сидя на стуле",
     "category": "body",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше понимать тело"
   },
   {
     "id": "gratitude_3",
@@ -158,11 +290,24 @@
     "expectedEffect": "Смещение фокуса на позитив, появление внутренней опоры.",
     "simpleVersion": "Вспомнить одну вещь с благодарностью",
     "category": "focus",
-    "time": [3, 5],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше принимать"
   },
   {
     "id": "read_5_pages",
@@ -173,11 +318,22 @@
     "expectedEffect": "Успокоение ума, переключение с тревожных мыслей.",
     "simpleVersion": "Прочитать 1 страницу",
     "category": "focus",
-    "time": [10],
-    "energy": ["normal"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      10
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "soft",
+    "word": "Лучше концентрироваться"
   },
   {
     "id": "listen_song_eyes_closed",
@@ -188,11 +344,25 @@
     "expectedEffect": "Эмоциональная разгрузка, микро-отдых для глаз и ума.",
     "simpleVersion": "Послушать припев песни",
     "category": "sensory",
-    "time": [3, 5],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      3,
+      5
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше воспринимать"
   },
   {
     "id": "write_thought",
@@ -203,11 +373,24 @@
     "expectedEffect": "Снижение ментального груза, ясность.",
     "simpleVersion": "Записать мысль в заметки телефона",
     "category": "focus",
-    "time": [2],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше рефлексировать"
   },
   {
     "id": "mindful_dialogue",
@@ -218,26 +401,54 @@
     "expectedEffect": "Чувство связи с другими, выход из эгоцентричного состояния.",
     "simpleVersion": "Сказать искренний комплимент",
     "category": "focus",
-    "time": [5],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "soft",
+    "word": "Лучше слышать других"
   },
   {
     "id": "meditate_3m",
-    "title": "Помедитировать 3 минуты",
+    "title": "Помедитировать",
     "description": "**Короткая медитация**. Наблюдение за дыханием или ощущениями без попыток их изменить. Возвращает присутствие.",
     "firstStep": "Сядь удобно, закрой глаза",
     "finish": "Пошевели пальцами, открой глаза.",
     "expectedEffect": "Пауза в потоке мыслей, центрирование.",
     "simpleVersion": "Минута тишины с закрытыми глазами",
     "category": "recovery",
-    "time": [3],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2,
+      3,
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше осознавать"
   },
   {
     "id": "plank_30s",
@@ -248,11 +459,23 @@
     "expectedEffect": "Физическая собранность, мобилизация воли.",
     "simpleVersion": "Планка 15 секунд",
     "category": "activation",
-    "time": [1],
-    "energy": ["normal", "high"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "hard"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "hard",
+    "word": "Лучше справляться"
   },
   {
     "id": "plan_tomorrow_3",
@@ -263,11 +486,23 @@
     "expectedEffect": "Снижение фоновой тревоги, ясность следующего дня.",
     "simpleVersion": "Записать 1 главную задачу на завтра",
     "category": "focus",
-    "time": [5],
-    "energy": ["normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше выбирать"
   },
   {
     "id": "brush_teeth_mindful",
@@ -278,11 +513,23 @@
     "expectedEffect": "Снижение автопилота, присутствие в моменте.",
     "simpleVersion": "Помыть руки, чувствуя температуру воды",
     "category": "sensory",
-    "time": [3],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше здесь"
   },
   {
     "id": "eat_fruit",
@@ -293,11 +540,24 @@
     "expectedEffect": "Удовольствие, сенсорное заземление, прилив лёгкой энергии.",
     "simpleVersion": "Съесть дольку шоколада или ягоду",
     "category": "sensory",
-    "time": [5],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      5
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше чувствовать"
   },
   {
     "id": "steps_20_inplace",
@@ -308,11 +568,24 @@
     "expectedEffect": "Снятие физической зажатости, лёгкая бодрость.",
     "simpleVersion": "Перекаты с пятки на носок 10 раз",
     "category": "activation",
-    "time": [1],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше наполняться"
   },
   {
     "id": "ventilate_room",
@@ -323,26 +596,53 @@
     "expectedEffect": "Ощущение чистоты, снятие сонливости.",
     "simpleVersion": "Приоткрыть форточку на 1 минуту",
     "category": "recovery",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше дышать"
   },
   {
     "id": "draw_2m",
-    "title": "Нарисовать что-нибудь за 2 минуты",
+    "title": "Нарисовать что-нибудь",
     "description": "**Быстрое творчество**. Рисование узоров, каракулей или простых форм отключает логическое мышление и даёт отдых левому полушарию.",
     "firstStep": "Возьми карандаш и бумагу, начни вести линию",
     "finish": "Отложи карандаш, оцени рисунок без критики.",
     "expectedEffect": "Переключение полушарий, микро-разгрузка.",
     "simpleVersion": "Нарисовать 5 кружочков",
     "category": "creative",
-    "time": [2],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      2,
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше быть"
   },
   {
     "id": "voice_message_self",
@@ -353,11 +653,23 @@
     "expectedEffect": "Прояснение мыслей, снятие эмоционального груза.",
     "simpleVersion": "Сказать одну мысль вслух, никуда не записывая",
     "category": "focus",
-    "time": [2, 5],
-    "energy": ["normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      2
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше слышать себя"
   },
   {
     "id": "hang_pullup_bar",
@@ -368,11 +680,24 @@
     "expectedEffect": "Расслабление спины, физическое облегчение.",
     "simpleVersion": "Потянуться стоя, вытянув руки в потолок",
     "category": "body",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше понимать тело"
   },
   {
     "id": "tea_no_phone",
@@ -383,11 +708,24 @@
     "expectedEffect": "Снижение фонового стресса, согревание.",
     "simpleVersion": "Сделать первые три глотка чая осознанно",
     "category": "recovery",
-    "time": [10],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше отдыхать"
   },
   {
     "id": "barefoot_textures",
@@ -398,11 +736,24 @@
     "expectedEffect": "Мощное заземление, выход из мыслемешалки.",
     "simpleVersion": "Покатать стопой мячик или бутылку",
     "category": "sensory",
-    "time": [2, 3],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2,
+      3
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше ощущать"
   },
   {
     "id": "journal_sentence",
@@ -413,26 +764,51 @@
     "expectedEffect": "Фиксация момента, удовлетворение от выполненного ритуала.",
     "simpleVersion": "Написать одно слово дня",
     "category": "focus",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше замечать"
   },
   {
     "id": "look_window_2m",
-    "title": "Посмотреть в окно 2 минуты",
+    "title": "Посмотреть в окно",
     "description": "**Смотреть вдаль**. Расслабляет глазные мышцы (спазмированные от экранов) и даёт уму пространство блуждать без концентрации.",
     "firstStep": "Подойди к окну, найди взглядом самый дальний объект",
     "finish": "Поморгай несколько раз, вернись к делам.",
     "expectedEffect": "Отдых для глаз, снижение ментального напряжения.",
     "simpleVersion": "Посмотреть в окно 30 секунд",
     "category": "recovery",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше отдыхать"
   },
   {
     "id": "pushups_5",
@@ -443,26 +819,52 @@
     "expectedEffect": "Мгновенная бодрость, тонус в мышцах.",
     "simpleVersion": "Упереться в стену руками на 10 секунд с силой",
     "category": "activation",
-    "time": [1],
-    "energy": ["normal", "high"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше справляться"
   },
   {
     "id": "silence_5m",
-    "title": "Посидеть в тишине 5 минут",
+    "title": "Посидеть в тишине",
     "description": "**Информационный детокс**. В мире постоянного шума тишина становится целительной. Практика ничегонеделания без раздражителей.",
     "firstStep": "Поставь таймер, выключи все звуки",
     "finish": "Когда таймер сработает, мягко потянись.",
     "expectedEffect": "Успокоение нервной системы, остановка спешки.",
     "simpleVersion": "Минута тишины",
     "category": "recovery",
-    "time": [5],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2,
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше внутри"
   },
   {
     "id": "write_qualities",
@@ -473,11 +875,23 @@
     "expectedEffect": "Восстановление внутренней опоры, уверенность.",
     "simpleVersion": "Вспомнить одно своё хорошее качество",
     "category": "focus",
-    "time": [3],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с собой"
   },
   {
     "id": "good_moment",
@@ -488,11 +902,25 @@
     "expectedEffect": "Улучшение настроения, чувство удовлетворённости.",
     "simpleVersion": "Просто улыбнуться воспоминанию",
     "category": "focus",
-    "time": [1, 2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      1,
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше замечать"
   },
   {
     "id": "affirmation",
@@ -503,11 +931,23 @@
     "expectedEffect": "Снижение неуверенности, фокус на позитивном сценарии.",
     "simpleVersion": "Сказать себе «Всё нормально»",
     "category": "focus",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["stuck", "scattered"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с собой"
   },
   {
     "id": "forgive_mental",
@@ -518,11 +958,21 @@
     "expectedEffect": "Облегчение, снятие внутреннего зажима.",
     "simpleVersion": "Простить себя за мелкую ошибку",
     "category": "recovery",
-    "time": [2, 3],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      3
+    ],
+    "energy": [
+      "normal"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше принимать"
   },
   {
     "id": "safe_place_mental",
@@ -533,11 +983,21 @@
     "expectedEffect": "Глубокое чувство безопасности и покоя.",
     "simpleVersion": "Посмотреть на фото красивой природы",
     "category": "recovery",
-    "time": [3],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше расслабляться"
   },
   {
     "id": "goal_month",
@@ -548,11 +1008,22 @@
     "expectedEffect": "Появление вектора, снижение хаоса в планах.",
     "simpleVersion": "Назвать главную задачу недели",
     "category": "focus",
-    "time": [2],
-    "energy": ["normal", "high"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      3
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "medium",
+    "word": "Лучше выбирать"
   },
   {
     "id": "read_quote",
@@ -563,11 +1034,22 @@
     "expectedEffect": "Вдохновение, новый взгляд на вещи.",
     "simpleVersion": "Прочитать случайную пословицу",
     "category": "focus",
-    "time": [1, 2],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "soft",
+    "word": "Лучше мыслить"
   },
   {
     "id": "grounding_5_things",
@@ -578,11 +1060,22 @@
     "expectedEffect": "Экстренное снижение тревоги, возврат в реальность.",
     "simpleVersion": "Назвать 3 предмета синего цвета в комнате",
     "category": "recovery",
-    "time": [1, 2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше здесь"
   },
   {
     "id": "breathe_478",
@@ -593,11 +1086,23 @@
     "expectedEffect": "Сильное физиологическое расслабление, подготовка ко сну.",
     "simpleVersion": "Сделать выдох длиннее вдоха",
     "category": "recovery",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше расслабляться"
   },
   {
     "id": "letter_future",
@@ -608,26 +1113,50 @@
     "expectedEffect": "Расширение горизонта планирования, самоподдержка.",
     "simpleVersion": "Написать себе «Ты молодец» на стикере",
     "category": "focus",
-    "time": [3, 5],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "medium",
+    "word": "Лучше жить"
   },
   {
     "id": "prayer_silence_2m",
-    "title": "Помолиться или побыть в тишине 2 минуты",
+    "title": "Помолиться или побыть в тишине",
     "description": "**Духовная пауза**. Обращение к высшему или просто нахождение в благоговейной тишине. Смещает фокус с Эго на нечто большее.",
     "firstStep": "Закрой глаза, успокой дыхание",
     "finish": "Поблагодари за момент и открой глаза.",
     "expectedEffect": "Обретение смыслов, глубокий внутренний покой.",
     "simpleVersion": "Сказать внутреннее «Спасибо» жизни",
     "category": "recovery",
-    "time": [2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense", "calm"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше внутри"
   },
   {
     "id": "smile_mirror",
@@ -638,11 +1167,23 @@
     "expectedEffect": "Повышение настроения, принятие себя.",
     "simpleVersion": "Просто потянуться уголками губ вверх на 10 секунд",
     "category": "sensory",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с собой"
   },
   {
     "id": "let_go_thing",
@@ -653,11 +1194,22 @@
     "expectedEffect": "Освобождение энергии, чувство лёгкости.",
     "simpleVersion": "Мысленно представить, как отпускаешь шарик с проблемой",
     "category": "focus",
-    "time": [2],
-    "energy": ["normal"],
-    "focus": ["stuck"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше принимать"
   },
   {
     "id": "mindful_walk_room",
@@ -668,11 +1220,23 @@
     "expectedEffect": "Мощная синхронизация тела и ума, заземление.",
     "simpleVersion": "Сделать 3 медленных осознанных шага",
     "category": "sensory",
-    "time": [1, 2],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше в моменте"
   },
   {
     "id": "thank_helper",
@@ -683,11 +1247,23 @@
     "expectedEffect": "Чувство связи с людьми, тепло на душе.",
     "simpleVersion": "Подумать о близком друге",
     "category": "recovery",
-    "time": [1, 2],
-    "energy": ["low", "normal"],
-    "focus": ["stuck"],
-    "tension": ["calm", "tense"],
-    "intensity": "soft"
+    "time": [
+      2
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с близкими"
   },
   {
     "id": "state_3_words",
@@ -698,11 +1274,22 @@
     "expectedEffect": "Понимание себя, снижение аффекта.",
     "simpleVersion": "Назвать вслух одну главную эмоцию момента",
     "category": "focus",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["scattered"],
-    "tension": ["tense"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше слышать себя"
   },
   {
     "id": "sit_straight_1m",
@@ -713,11 +1300,24 @@
     "expectedEffect": "Чувство собственного достоинства, бодрость.",
     "simpleVersion": "Свести лопатки вместе на 10 секунд",
     "category": "body",
-    "time": [1],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["calm"],
-    "intensity": "soft"
+    "time": [
+      1
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше быть"
   },
   {
     "id": "read_page_aloud",
@@ -728,11 +1328,21 @@
     "expectedEffect": "Прояснение ума, остановка внутреннего диалога.",
     "simpleVersion": "Прочитать вслух один абзац",
     "category": "focus",
-    "time": [2, 3],
-    "energy": ["normal"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      2
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "medium",
+    "word": "Лучше концентрироваться"
   },
   {
     "id": "promise_tomorrow",
@@ -743,11 +1353,22 @@
     "expectedEffect": "Чувство ответственности, укрепление силы воли.",
     "simpleVersion": "Обещать себе выпить стакан воды с утра",
     "category": "focus",
-    "time": [1, 2],
-    "energy": ["normal", "high"],
-    "focus": ["scattered"],
-    "tension": ["calm"],
-    "intensity": "medium"
+    "time": [
+      2
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "medium",
+    "word": "Лучше заботиться"
   },
   {
     "id": "tear_paper",
@@ -758,26 +1379,50 @@
     "expectedEffect": "Снижение агрессии, высвобождение заблокированных эмоций.",
     "simpleVersion": "Смять лист бумаги в комок с силой",
     "category": "body",
-    "time": [1],
-    "energy": ["normal", "high"],
-    "focus": ["stuck", "scattered"],
-    "tension": ["tense"],
-    "intensity": "medium"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше справляться"
   },
   {
     "id": "do_nothing_3m",
-    "title": "Осознанно ничего не делать 3 минуты",
+    "title": "Осознанно ничего не делать",
     "description": "**Встреча с сопротивлением**. Осознанное бездействие подсвечивает внутреннего критика и спешку, позволяя легализовать отдых и сбросить ожидание постоянной продуктивности.",
     "firstStep": "Поставь таймер на 3 минуты, отложи телефон",
     "finish": "После сигнала таймера потянись и медленно вернись к делам.",
     "expectedEffect": "Снижение внутреннего давления, легализация отдыха.",
     "simpleVersion": "Разрешить себе ничего не делать 1 минуту",
     "category": "recovery",
-    "time": [3],
-    "energy": ["low", "normal"],
-    "focus": ["scattered", "stuck"],
-    "tension": ["tense", "calm"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше отдыхать"
   },
   {
     "id": "ask_how_i_feel",
@@ -788,11 +1433,23 @@
     "expectedEffect": "Легализация чувств, ясность, снижение эмоционального накала.",
     "simpleVersion": "Назвать одну эмоцию, которую сейчас испытываешь",
     "category": "focus",
-    "time": [2, 3],
-    "energy": ["low", "normal"],
-    "focus": ["stuck", "scattered"],
-    "tension": ["tense", "calm"],
-    "intensity": "soft"
+    "time": [
+      3
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше чувствовать"
   },
   {
     "id": "shake_body_1m",
@@ -803,10 +1460,412 @@
     "expectedEffect": "Снижение уровня стресса, физическое и эмоциональное расслабление.",
     "simpleVersion": "Энергично потрясти кистями рук 30 секунд",
     "category": "body",
-    "time": [1],
-    "energy": ["low", "normal", "high"],
-    "focus": ["stuck"],
-    "tension": ["tense"],
-    "intensity": "hard"
+    "time": [
+      1
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "hard",
+    "word": "Лучше проживать"
+  },
+  {
+    "id": "brisk_walk",
+    "title": "Быстрая прогулка",
+    "description": "**Быстрая ходьба** разгоняет кровь и задаёт телу ритм. Через несколько минут мысли становятся яснее, а напряжение уходит в движение.",
+    "firstStep": "Выйди на улицу и иди чуть быстрее, чем обычно",
+    "finish": "Последнюю минуту иди медленно и выровняй дыхание.",
+    "expectedEffect": "Бодрость, ясная голова, меньше внутреннего напряжения.",
+    "simpleVersion": "Пройтись быстрым шагом по квартире или коридору",
+    "category": "activation",
+    "time": [
+      10
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше фокусироваться"
+  },
+  {
+    "id": "dance_song",
+    "title": "Потанцевать под одну-две песни",
+    "description": "**Свободный танец** без зрителей и правил. Музыка и движение быстро меняют состояние: тело разогревается, голова отдыхает.",
+    "firstStep": "Включи песню, под которую хочется двигаться",
+    "finish": "Дослушай последнюю песню, стоя спокойно, и прислушайся к телу.",
+    "expectedEffect": "Лёгкость, прилив энергии, хорошее настроение.",
+    "simpleVersion": "Покачаться под одну песню, не вставая",
+    "category": "activation",
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше жить"
+  },
+  {
+    "id": "box_breathing",
+    "title": "Дыхание квадратом",
+    "description": "**Дыхание квадратом**: вдох на 4 счёта, задержка на 4, выдох на 4, задержка на 4. Ровный ритм успокаивает нервную систему и собирает внимание.",
+    "firstStep": "Сядь ровно и медленно выдохни весь воздух",
+    "finish": "Сделай один обычный свободный вдох и выдох.",
+    "expectedEffect": "Спокойствие, ровное дыхание, собранность.",
+    "simpleVersion": "Три медленных вдоха и выдоха по 4 счёта",
+    "category": "recovery",
+    "time": [
+      2,
+      5
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше дышать"
+  },
+  {
+    "id": "body_scan",
+    "title": "Сканирование тела",
+    "description": "**Сканирование тела**: внимание медленно проходит от макушки до стоп. Замечаешь, где напряжено, и мягко отпускаешь — без оценки и усилий.",
+    "firstStep": "Сядь или ляг удобно, закрой глаза и почувствуй макушку",
+    "finish": "Почувствуй тело целиком, пошевели пальцами рук и ног и открой глаза.",
+    "expectedEffect": "Расслабление, ощущение тела, спокойствие.",
+    "simpleVersion": "Расслабить по очереди лицо, плечи и руки",
+    "category": "recovery",
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше расслабляться"
+  },
+  {
+    "id": "free_writing",
+    "title": "Писать без остановки",
+    "description": "**Свободное письмо**: пишешь всё, что приходит в голову, не останавливаясь и не исправляя. Мысли выходят на бумагу, и в голове становится просторнее.",
+    "firstStep": "Возьми лист или открой заметку и начни с фразы «Сейчас я думаю о…»",
+    "finish": "Перечитай написанное и подчеркни одну важную мысль.",
+    "expectedEffect": "Ясность, меньше мыслей по кругу.",
+    "simpleVersion": "Написать пять предложений подряд о том, что на уме",
+    "category": "focus",
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше рефлексировать"
+  },
+  {
+    "id": "call_close_one",
+    "title": "Позвонить близкому человеку",
+    "description": "**Живой разговор** с тем, кто тебе дорог. Не по делу — просто узнать, как дела. Связь с близкими — один из самых надёжных источников сил.",
+    "firstStep": "Выбери человека, с которым давно не говорил, и набери его",
+    "finish": "Скажи, что рад был услышать, и поблагодари за разговор.",
+    "expectedEffect": "Тепло, чувство опоры и близости.",
+    "simpleVersion": "Написать близкому человеку пару тёплых слов",
+    "category": "recovery",
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше с близкими"
+  },
+  {
+    "id": "care_plant",
+    "title": "Позаботиться о растении",
+    "description": "**Забота о живом**: полить, протереть листья, повернуть к свету. Неторопливые действия возвращают внимание в настоящее.",
+    "firstStep": "Подойди к растению и рассмотри его листья",
+    "finish": "Отойди на шаг и посмотри на растение целиком.",
+    "expectedEffect": "Спокойствие, чувство заботы и порядка.",
+    "simpleVersion": "Полить одно растение",
+    "category": "sensory",
+    "time": [
+      2,
+      5
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше заботиться"
+  },
+  {
+    "id": "full_stretch",
+    "title": "Растяжка всего тела",
+    "description": "**Растяжка сверху вниз**: шея, плечи, спина, бёдра, ноги. Медленные движения снимают зажимы после сидения и возвращают телу подвижность.",
+    "firstStep": "Встань, медленно наклони голову к одному плечу, затем к другому",
+    "finish": "Встань ровно, сделай глубокий вдох и потянись вверх.",
+    "expectedEffect": "Лёгкость в теле, меньше скованности.",
+    "simpleVersion": "Потянуть шею и плечи сидя",
+    "category": "body",
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше понимать тело"
+  },
+  {
+    "id": "declutter_drawer",
+    "title": "Разобрать один ящик или полку",
+    "description": "**Порядок в одном месте**: ящик стола, полка, сумка. Маленькая законченная задача с видимым результатом помогает собраться и сдвинуться с места.",
+    "firstStep": "Выбери один ящик или полку и выложи всё содержимое",
+    "finish": "Верни на место только нужное и посмотри на результат.",
+    "expectedEffect": "Чувство контроля и завершённости, ясная голова.",
+    "simpleVersion": "Выбросить три ненужные вещи",
+    "category": "focus",
+    "time": [
+      10
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше думать"
+  },
+  {
+    "id": "mini_workout",
+    "title": "Короткая зарядка",
+    "description": "**Пять простых упражнений** по минуте: вращения руками, наклоны, приседания, выпады, прыжки на месте. Тело просыпается, внимание возвращается.",
+    "firstStep": "Встань, ноги на ширине плеч, начни вращать руками",
+    "finish": "Пройдись медленно и восстанови дыхание.",
+    "expectedEffect": "Бодрость, тепло в теле, собранность.",
+    "simpleVersion": "Три упражнения по 30 секунд",
+    "category": "activation",
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "medium",
+    "word": "Лучше просыпаться"
+  },
+  {
+    "id": "three_ideas",
+    "title": "Придумать три решения задачи",
+    "description": "**Три варианта вместо одного**. Когда застрял, полезно придумать три решения — даже странных. Мозг переключается с «не получается» на поиск.",
+    "firstStep": "Запиши задачу одной фразой",
+    "finish": "Выбери вариант, с которого можно начать прямо сейчас.",
+    "expectedEffect": "Движение вперёд, новые идеи.",
+    "simpleVersion": "Придумать одно новое решение",
+    "category": "focus",
+    "time": [
+      5
+    ],
+    "energy": [
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "stuck"
+    ],
+    "tension": [
+      "calm"
+    ],
+    "intensity": "medium",
+    "word": "Лучше мыслить"
+  },
+  {
+    "id": "kind_message",
+    "title": "Написать кому-нибудь тёплое сообщение",
+    "description": "**Маленький добрый жест**: поблагодарить, поддержать, напомнить о хорошем. Забота о другом возвращает и нам чувство связи с миром.",
+    "firstStep": "Подумай, кому сейчас были бы приятны твои слова",
+    "finish": "Отправь сообщение и не жди ответа.",
+    "expectedEffect": "Тепло, чувство нужности.",
+    "simpleVersion": "Отправить кому-нибудь одно доброе слово",
+    "category": "recovery",
+    "time": [
+      2,
+      5
+    ],
+    "energy": [
+      "low",
+      "normal",
+      "high"
+    ],
+    "focus": [
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше взаимодействовать"
+  },
+  {
+    "id": "cook_mindful",
+    "title": "Приготовить простой перекус осознанно",
+    "description": "**Готовка как практика**: нарезать, заварить, разложить — медленно, замечая запахи, цвета и звуки. Простые действия собирают рассеянное внимание.",
+    "firstStep": "Выбери что-то простое: бутерброд, салат, кашу",
+    "finish": "Сядь и съешь первые кусочки не торопясь.",
+    "expectedEffect": "Спокойствие, присутствие, сытость.",
+    "simpleVersion": "Медленно нарезать один фрукт",
+    "category": "sensory",
+    "time": [
+      10
+    ],
+    "energy": [
+      "low",
+      "normal"
+    ],
+    "focus": [
+      "scattered",
+      "normal"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше сейчас"
+  },
+  {
+    "id": "lie_down_rest",
+    "title": "Полежать с закрытыми глазами",
+    "description": "**Короткий отдых лёжа** без телефона и цели уснуть. Телу и глазам нужна пауза — даже несколько минут возвращают силы.",
+    "firstStep": "Ляг, закрой глаза и положи руки на живот",
+    "finish": "Потянись, медленно сядь и посиди ещё немного.",
+    "expectedEffect": "Восстановление сил, меньше усталости.",
+    "simpleVersion": "Минуту посидеть с закрытыми глазами",
+    "category": "recovery",
+    "time": [
+      5,
+      10
+    ],
+    "energy": [
+      "low"
+    ],
+    "focus": [
+      "scattered",
+      "normal",
+      "stuck"
+    ],
+    "tension": [
+      "calm",
+      "tense"
+    ],
+    "intensity": "soft",
+    "word": "Лучше отдыхать"
   }
 ]
