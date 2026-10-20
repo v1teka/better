@@ -27,19 +27,48 @@ import { getPracticeById } from "@/lib/practice-selector";
 import type { Practice, Rating } from "@/types/practice";
 
 /**
- * intro    — logo, title, rotating «Слова Лучше», «Начать»
+ * intro    — logo, «Лучше» with a changing second word, «Начать»
  * feedback — after a practice: how did it go, centered
- * word     — the practice's «Слово Лучше» as a closing note, then back to intro
+ * thanks   — the chosen emoji and a short reply to the rating, then back to intro
  */
-type Phase = "intro" | "feedback" | "word";
+type Phase = "intro" | "feedback" | "thanks";
 
-// How long the closing word stays before the home screen returns
-const WORD_HOLD_MS = 2400;
+// How long the reply stays before the home screen returns
+const THANKS_HOLD_MS = 2200;
 
-const RATINGS: { rating: Rating; emoji: string; aura: string; label: string }[] = [
-  { rating: "bad", emoji: "😔", aura: "#B794F4", label: "Плохо" },
-  { rating: "neutral", emoji: "😐", aura: "#90CDF4", label: "Нормально" },
-  { rating: "good", emoji: "😊", aura: "#F6AD55", label: "Хорошо" },
+// The rating does affect the next offers (lib/practice-selector.ts), so the reply says so
+const RATINGS: {
+  rating: Rating;
+  emoji: string;
+  aura: string;
+  label: string;
+  reply: string;
+  note: string;
+}[] = [
+  {
+    rating: "bad",
+    emoji: "😔",
+    aura: "#B794F4",
+    label: "Плохо",
+    reply: "Жаль, что не подошло",
+    note: "В следующий раз предложим другое",
+  },
+  {
+    rating: "neutral",
+    emoji: "😐",
+    aura: "#90CDF4",
+    label: "Нормально",
+    reply: "Спасибо, что отметили",
+    note: "Так подбор станет точнее",
+  },
+  {
+    rating: "good",
+    emoji: "😊",
+    aura: "#F6AD55",
+    label: "Хорошо",
+    reply: "Рады, что помогло",
+    note: "Запомним, что вам подошло",
+  },
 ];
 
 function randomWord(except?: string): string {
@@ -47,25 +76,55 @@ function randomWord(except?: string): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-/** «Слова Лучше» replacing each other under the title */
-function RotatingWord() {
+// The window the changing word scrolls through: fixed, so «Лучше» never moves
+const WORD_WINDOW_HEIGHT = 44;
+
+/**
+ * «Лучше» stays in place; the second word under it changes like a ticker:
+ * the old one slides up and fades, the new one comes up from below
+ */
+function BetterTitle() {
   const [word, setWord] = useState(() => randomWord());
 
   useEffect(() => {
-    const interval = setInterval(() => setWord((w) => randomWord(w)), 3500);
+    const interval = setInterval(() => setWord((w) => randomWord(w)), 3200);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <View style={{ height: 28, alignSelf: "stretch", alignItems: "center" }}>
-      <Animated.Text
-        key={word}
-        entering={FadeIn.duration(900)}
-        exiting={FadeOut.duration(900)}
-        style={{ position: "absolute", fontSize: 18, color: "#718096" }}
+    <View style={{ alignItems: "center", alignSelf: "stretch" }}>
+      <Text style={{ fontSize: 48, fontWeight: "700", color: "#2D3748", letterSpacing: -1 }}>
+        Лучше
+      </Text>
+      <View
+        style={{
+          height: WORD_WINDOW_HEIGHT,
+          alignSelf: "stretch",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
       >
-        {word}
-      </Animated.Text>
+        <Animated.Text
+          key={word}
+          entering={FadeInDown.duration(600).easing(Easing.out(Easing.cubic))}
+          exiting={FadeOutUp.duration(500).easing(Easing.in(Easing.cubic))}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            fontSize: 32,
+            fontWeight: "600",
+            color: "#4A90E2",
+            letterSpacing: -0.5,
+          }}
+        >
+          {word}
+        </Animated.Text>
+      </View>
     </View>
   );
 }
@@ -235,9 +294,9 @@ export default function HomeScreen() {
     // Let the aura bloom, then the card drifts up and the closing word comes in
     later(() => {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPhase("word");
+      setPhase("thanks");
     }, 700);
-    later(() => setPhase("intro"), 700 + WORD_HOLD_MS);
+    later(() => setPhase("intro"), 700 + THANKS_HOLD_MS);
   };
 
   const handleSkip = () => {
@@ -245,7 +304,7 @@ export default function HomeScreen() {
     setPhase("intro");
   };
 
-  const closingWord = practice?.word ?? "Лучше быть";
+  const reply = RATINGS.find((r) => r.rating === selected);
 
   return (
     <View style={{ flex: 1 }}>
@@ -325,20 +384,8 @@ export default function HomeScreen() {
                 />
               </Animated.View>
 
-              {/* Title with «Слова Лучше» */}
-              <View style={{ alignItems: "center", alignSelf: "stretch", gap: 8 }}>
-                <Text
-                  style={{
-                    fontSize: 48,
-                    fontWeight: "700",
-                    color: "#2D3748",
-                    letterSpacing: -1,
-                  }}
-                >
-                  Лучше
-                </Text>
-                <RotatingWord />
-              </View>
+              {/* «Лучше» + changing word */}
+              <BetterTitle />
 
               <Animated.View entering={FadeInDown.delay(250).springify().damping(16)}>
                 <Pressable
@@ -454,9 +501,9 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          {phase === "word" && (
+          {phase === "thanks" && reply && (
             <Animated.View
-              entering={ZoomIn.delay(250).springify().damping(14)}
+              entering={FadeIn.duration(400)}
               exiting={FadeOutUp.duration(600)}
               style={{
                 position: "absolute",
@@ -470,10 +517,45 @@ export default function HomeScreen() {
                 gap: 12,
               }}
             >
-              <Text style={{ fontSize: 34, fontWeight: "700", color: "#2D3748", textAlign: "center" }}>
-                {closingWord}
-              </Text>
-              <Text style={{ fontSize: 15, color: "#718096" }}>Спасибо, что отметили</Text>
+              {/* The chosen emoji stays, so the reply reads as an answer to it */}
+              <Animated.View entering={ZoomIn.springify().damping(12)} style={{ marginBottom: 36 }}>
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -26,
+                    left: -26,
+                    width: 108,
+                    height: 108,
+                    borderRadius: 54,
+                    backgroundColor: reply.aura,
+                    opacity: 0.45,
+                  }}
+                />
+                <View
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 32 }}>{reply.emoji}</Text>
+                </View>
+              </Animated.View>
+              <Animated.Text
+                entering={FadeInDown.delay(150).duration(500)}
+                style={{ fontSize: 26, fontWeight: "700", color: "#2D3748", textAlign: "center" }}
+              >
+                {reply.reply}
+              </Animated.Text>
+              <Animated.Text
+                entering={FadeInDown.delay(300).duration(500)}
+                style={{ fontSize: 15, color: "#718096", textAlign: "center" }}
+              >
+                {reply.note}
+              </Animated.Text>
             </Animated.View>
           )}
         </View>

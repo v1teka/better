@@ -29,8 +29,6 @@ export interface Practice {
   focus: Focus[];
   tension: Tension[];
   intensity: Intensity;
-  /** "Слово Лучше" shown after the practice, e.g. "Лучше дышать" */
-  word: string;
 }
 
 /** Survey answers; every question is optional */

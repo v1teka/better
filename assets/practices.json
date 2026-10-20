@@ -26,8 +26,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше ощущать"
+    "intensity": "soft"
   },
   {
     "id": "breathe_10",
@@ -53,8 +52,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше дышать"
+    "intensity": "soft"
   },
   {
     "id": "clean_surface",
@@ -80,8 +78,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше думать"
+    "intensity": "soft"
   },
   {
     "id": "wipe_table",
@@ -108,8 +105,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше в моменте"
+    "intensity": "soft"
   },
   {
     "id": "go_outside_5m",
@@ -138,8 +134,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с миром"
+    "intensity": "soft"
   },
   {
     "id": "walk_around_house",
@@ -167,8 +162,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше мыслить"
+    "intensity": "medium"
   },
   {
     "id": "take_shower",
@@ -194,8 +188,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше восстанавливаться"
+    "intensity": "soft"
   },
   {
     "id": "wash_face_cold",
@@ -222,8 +215,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше пробуждаться"
+    "intensity": "medium"
   },
   {
     "id": "squats_10",
@@ -249,8 +241,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше наполняться"
+    "intensity": "medium"
   },
   {
     "id": "stretch_2m",
@@ -278,8 +269,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше понимать тело"
+    "intensity": "soft"
   },
   {
     "id": "gratitude_3",
@@ -306,8 +296,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше принимать"
+    "intensity": "soft"
   },
   {
     "id": "read_5_pages",
@@ -332,8 +321,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "soft",
-    "word": "Лучше концентрироваться"
+    "intensity": "soft"
   },
   {
     "id": "listen_song_eyes_closed",
@@ -361,8 +349,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше воспринимать"
+    "intensity": "soft"
   },
   {
     "id": "write_thought",
@@ -389,8 +376,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше рефлексировать"
+    "intensity": "soft"
   },
   {
     "id": "mindful_dialogue",
@@ -415,8 +401,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "soft",
-    "word": "Лучше слышать других"
+    "intensity": "soft"
   },
   {
     "id": "meditate_3m",
@@ -447,8 +432,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше осознавать"
+    "intensity": "soft"
   },
   {
     "id": "plank_30s",
@@ -474,8 +458,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "hard",
-    "word": "Лучше справляться"
+    "intensity": "hard"
   },
   {
     "id": "plan_tomorrow_3",
@@ -501,8 +484,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше выбирать"
+    "intensity": "medium"
   },
   {
     "id": "brush_teeth_mindful",
@@ -528,8 +510,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше здесь"
+    "intensity": "soft"
   },
   {
     "id": "eat_fruit",
@@ -556,8 +537,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше чувствовать"
+    "intensity": "soft"
   },
   {
     "id": "steps_20_inplace",
@@ -584,8 +564,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше наполняться"
+    "intensity": "medium"
   },
   {
     "id": "ventilate_room",
@@ -613,8 +592,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше дышать"
+    "intensity": "soft"
   },
   {
     "id": "draw_2m",
@@ -641,8 +619,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше быть"
+    "intensity": "soft"
   },
   {
     "id": "voice_message_self",
@@ -668,8 +645,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше слышать себя"
+    "intensity": "medium"
   },
   {
     "id": "hang_pullup_bar",
@@ -696,8 +672,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше понимать тело"
+    "intensity": "medium"
   },
   {
     "id": "tea_no_phone",
@@ -724,8 +699,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше отдыхать"
+    "intensity": "soft"
   },
   {
     "id": "barefoot_textures",
@@ -752,8 +726,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше ощущать"
+    "intensity": "soft"
   },
   {
     "id": "journal_sentence",
@@ -780,8 +753,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше замечать"
+    "intensity": "soft"
   },
   {
     "id": "look_window_2m",
@@ -807,8 +779,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше отдыхать"
+    "intensity": "soft"
   },
   {
     "id": "pushups_5",
@@ -834,8 +805,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше справляться"
+    "intensity": "medium"
   },
   {
     "id": "silence_5m",
@@ -863,8 +833,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше внутри"
+    "intensity": "soft"
   },
   {
     "id": "write_qualities",
@@ -890,8 +859,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с собой"
+    "intensity": "soft"
   },
   {
     "id": "good_moment",
@@ -919,8 +887,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше замечать"
+    "intensity": "soft"
   },
   {
     "id": "affirmation",
@@ -946,8 +913,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с собой"
+    "intensity": "soft"
   },
   {
     "id": "forgive_mental",
@@ -971,8 +937,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше принимать"
+    "intensity": "medium"
   },
   {
     "id": "safe_place_mental",
@@ -996,8 +961,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше расслабляться"
+    "intensity": "soft"
   },
   {
     "id": "goal_month",
@@ -1022,8 +986,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "medium",
-    "word": "Лучше выбирать"
+    "intensity": "medium"
   },
   {
     "id": "read_quote",
@@ -1048,8 +1011,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "soft",
-    "word": "Лучше мыслить"
+    "intensity": "soft"
   },
   {
     "id": "grounding_5_things",
@@ -1074,8 +1036,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше здесь"
+    "intensity": "soft"
   },
   {
     "id": "breathe_478",
@@ -1101,8 +1062,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше расслабляться"
+    "intensity": "soft"
   },
   {
     "id": "letter_future",
@@ -1127,8 +1087,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "medium",
-    "word": "Лучше жить"
+    "intensity": "medium"
   },
   {
     "id": "prayer_silence_2m",
@@ -1155,8 +1114,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше внутри"
+    "intensity": "soft"
   },
   {
     "id": "smile_mirror",
@@ -1182,8 +1140,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с собой"
+    "intensity": "soft"
   },
   {
     "id": "let_go_thing",
@@ -1208,8 +1165,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше принимать"
+    "intensity": "medium"
   },
   {
     "id": "mindful_walk_room",
@@ -1235,8 +1191,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше в моменте"
+    "intensity": "soft"
   },
   {
     "id": "thank_helper",
@@ -1262,8 +1217,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с близкими"
+    "intensity": "soft"
   },
   {
     "id": "state_3_words",
@@ -1288,8 +1242,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше слышать себя"
+    "intensity": "soft"
   },
   {
     "id": "sit_straight_1m",
@@ -1316,8 +1269,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше быть"
+    "intensity": "soft"
   },
   {
     "id": "read_page_aloud",
@@ -1341,8 +1293,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "medium",
-    "word": "Лучше концентрироваться"
+    "intensity": "medium"
   },
   {
     "id": "promise_tomorrow",
@@ -1367,8 +1318,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "medium",
-    "word": "Лучше заботиться"
+    "intensity": "medium"
   },
   {
     "id": "tear_paper",
@@ -1393,8 +1343,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше справляться"
+    "intensity": "medium"
   },
   {
     "id": "do_nothing_3m",
@@ -1421,8 +1370,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше отдыхать"
+    "intensity": "soft"
   },
   {
     "id": "ask_how_i_feel",
@@ -1448,8 +1396,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше чувствовать"
+    "intensity": "soft"
   },
   {
     "id": "shake_body_1m",
@@ -1474,8 +1421,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "hard",
-    "word": "Лучше проживать"
+    "intensity": "hard"
   },
   {
     "id": "brisk_walk",
@@ -1502,8 +1448,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше фокусироваться"
+    "intensity": "medium"
   },
   {
     "id": "dance_song",
@@ -1529,8 +1474,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше жить"
+    "intensity": "medium"
   },
   {
     "id": "box_breathing",
@@ -1557,8 +1501,7 @@
     "tension": [
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше дышать"
+    "intensity": "soft"
   },
   {
     "id": "body_scan",
@@ -1585,8 +1528,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше расслабляться"
+    "intensity": "soft"
   },
   {
     "id": "free_writing",
@@ -1614,8 +1556,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше рефлексировать"
+    "intensity": "soft"
   },
   {
     "id": "call_close_one",
@@ -1642,8 +1583,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше с близкими"
+    "intensity": "soft"
   },
   {
     "id": "care_plant",
@@ -1671,8 +1611,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше заботиться"
+    "intensity": "soft"
   },
   {
     "id": "full_stretch",
@@ -1701,8 +1640,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше понимать тело"
+    "intensity": "soft"
   },
   {
     "id": "declutter_drawer",
@@ -1728,8 +1666,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше думать"
+    "intensity": "medium"
   },
   {
     "id": "mini_workout",
@@ -1756,8 +1693,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "medium",
-    "word": "Лучше просыпаться"
+    "intensity": "medium"
   },
   {
     "id": "three_ideas",
@@ -1781,8 +1717,7 @@
     "tension": [
       "calm"
     ],
-    "intensity": "medium",
-    "word": "Лучше мыслить"
+    "intensity": "medium"
   },
   {
     "id": "kind_message",
@@ -1810,8 +1745,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше взаимодействовать"
+    "intensity": "soft"
   },
   {
     "id": "cook_mindful",
@@ -1837,8 +1771,7 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше сейчас"
+    "intensity": "soft"
   },
   {
     "id": "lie_down_rest",
@@ -1865,7 +1798,6 @@
       "calm",
       "tense"
     ],
-    "intensity": "soft",
-    "word": "Лучше отдыхать"
+    "intensity": "soft"
   }
 ]

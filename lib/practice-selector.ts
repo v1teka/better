@@ -55,7 +55,6 @@ const FALLBACK_PRACTICES: Practice[] = [
     focus: ["scattered", "stuck", "normal"],
     tension: ["calm", "tense"],
     intensity: "soft",
-    word: "Лучше дышать",
   },
   {
     id: "fallback_water",
@@ -71,7 +70,6 @@ const FALLBACK_PRACTICES: Practice[] = [
     focus: ["scattered", "stuck", "normal"],
     tension: ["calm", "tense"],
     intensity: "soft",
-    word: "Лучше ощущать",
   },
   {
     id: "fallback_walk",
@@ -87,7 +85,6 @@ const FALLBACK_PRACTICES: Practice[] = [
     focus: ["scattered", "stuck", "normal"],
     tension: ["calm", "tense"],
     intensity: "soft",
-    word: "Лучше с миром",
   },
 ];
 

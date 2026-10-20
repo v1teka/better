@@ -8,7 +8,6 @@ import {
   practiceDuration,
   suits,
 } from "@/lib/practice-selector";
-import { ALL_BETTER_WORDS } from "@/constants/better-words";
 import type { Energy, Focus, SurveyTime, Tension, UserState } from "@/types/practice";
 
 const ENERGIES: Energy[] = ["low", "normal", "high"];
@@ -33,13 +32,9 @@ describe("Catalog", () => {
     }
   });
 
-  it("gives every practice a word from «Слова Лучше» and unique id", () => {
-    const ids = new Set<string>();
-    for (const p of getAllPractices()) {
-      expect(ALL_BETTER_WORDS, p.id).toContain(p.word);
-      expect(ids.has(p.id), p.id).toBe(false);
-      ids.add(p.id);
-    }
+  it("gives every practice a unique id", () => {
+    const ids = getAllPractices().map((p) => p.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("never offers hard practices with low energy", () => {
