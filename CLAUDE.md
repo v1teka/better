@@ -26,8 +26,15 @@ npx eas-cli@latest build -p ios --profile production --auto-submit
 - Версия (`version` в `app.config.ts` и `package.json`) должна быть выше всех, что когда-либо
   загружались в App Store Connect: Manus выгружал 1.0.1–1.0.9. Номер сборки ведёт EAS.
 - Тема только светлая: все экраны сверстаны под светлый фон.
-- Каталог практик — `assets/practices.json`; подбор — `lib/scoring.ts` и
-  `lib/practice-selector.ts`. Время в опросе — верхняя граница («до N минут»).
+- Каталог практик — `assets/practices.json`, подбор — `lib/practice-selector.ts`. Каждый
+  отвеченный вопрос — жёсткий фильтр, время — диапазон (1–2, 3–5, 10 минут). Теги практик
+  значат «подходит этому состоянию». Тест следит, чтобы на любое сочетание ответов было
+  ≥ 3 практик: правишь каталог — гоняй `pnpm test`. У каждой практики своё «Слово Лучше»
+  (`word`, список — `constants/better-words.ts`).
+- Звук: фон `assets/sounds/ambient.m4a` (петля) и гонг; кнопка звука выключает оба и звук
+  уведомления (`lib/sound-setting.ts`). Источники и лицензии звуков — в заметках проекта.
+- Проверка без устройства: `npx expo start --web` и сценарий в headless Chrome; в режиме
+  разработки `/home?preview=<practiceId>` сразу открывает карточку оценки.
 - Таймер считает от часов, а не тиками (`lib/practice-timer.ts`): с заблокированным экраном
   гонг звонит локальным уведомлением (`lib/timer-notification.ts`, звук `assets/sounds/gong.caf`).
   Сменили `gong.mp3` — перегенерировать caf: `afconvert -f caff -d ima4 gong.mp3 gong.caf`.
