@@ -1,11 +1,11 @@
-import { View, Text, ScrollView, Pressable, Platform, AppState } from "react-native";
+import { View, Text, ScrollView, Pressable, Platform } from "react-native";
 import { Redirect, useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
-import { useAudioPlayer, setAudioModeAsync, type AudioPlayer } from "expo-audio";
+import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { Practice } from "@/types/practice";
@@ -18,34 +18,10 @@ import { usePracticeTimer } from "@/lib/practice-timer";
 import { useSoundOn } from "@/lib/sound-setting";
 
 const gongSound = require("@/assets/sounds/gong.mp3");
-const ambientSound = require("@/assets/sounds/ambient.m4a");
-
-// The background sound stays quiet: it sets the mood, the gong marks the end
-const AMBIENT_VOLUME = 0.35;
-
-/** Lower the volume to zero over `ms`, then pause */
-function fadeOut(player: AudioPlayer, ms: number) {
-  const steps = 10;
-  let step = 0;
-  const startVolume = player.volume;
-  const interval = setInterval(() => {
-    step++;
-    try {
-      player.volume = startVolume * (1 - step / steps);
-      if (step >= steps) {
-        clearInterval(interval);
-        player.pause();
-        player.volume = AMBIENT_VOLUME;
-      }
-    } catch {
-      clearInterval(interval);
-    }
-  }, ms / steps);
-}
 
 /**
  * Practice Execution Screen
- * Timer with background sound, the practice steps, the less important parts folded.
+ * Timer with a gong at the end, the practice steps, the less important parts folded.
  */
 export default function PracticeScreen() {
   const params = useLocalSearchParams<{ practiceId?: string; selectedTime?: string }>();
@@ -68,15 +44,10 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
   const gongRef = useRef(gong);
   gongRef.current = gong;
 
-  const ambient = useAudioPlayer(ambientSound);
-  const ambientRef = useRef(ambient);
-  ambientRef.current = ambient;
-
   const { secondsLeft, isRunning, isDone, start, toggle, stop } = usePracticeTimer({
     totalSeconds,
     notification: { title: practice.title, body: "Время вышло. Можно завершать", sound: soundOn },
     onFinish: (late) => {
-      fadeOut(ambientRef.current, 1500);
       // If the app was in the background, the notification has already rung
       if (late) return;
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -88,36 +59,15 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
     },
   });
 
-  // Enable audio in iOS silent mode; the background sound loops quietly
+  // The gong respects the silent switch: in silent mode the end is marked by vibration
   useEffect(() => {
     if (Platform.OS !== "web") {
-      setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+      setAudioModeAsync({ playsInSilentMode: false }).catch(() => {});
     }
-    try {
-      ambientRef.current.loop = true;
-      ambientRef.current.volume = AMBIENT_VOLUME;
-    } catch (_) {}
     return () => {
-      try { ambientRef.current.pause(); } catch (_) {}
       try { gongRef.current.remove(); } catch (_) {}
     };
   }, []);
-
-  // The background sound plays while the timer runs and sound is on.
-  // iOS pauses it in the background, so it resumes when the app is back.
-  useEffect(() => {
-    const sync = () => {
-      try {
-        if (isRunning && soundOn) ambientRef.current.play();
-        else if (!isDone) ambientRef.current.pause();
-      } catch (_) {}
-    };
-    sync();
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") sync();
-    });
-    return () => subscription.remove();
-  }, [isRunning, isDone, soundOn]);
 
   // Start timer automatically when screen mounts
   useEffect(() => {
@@ -130,7 +80,6 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
     isCompletingRef.current = true;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     stop();
-    try { ambientRef.current.pause(); } catch (_) {}
     try {
       await AsyncStorage.setItem("showFeedback", "true");
       await AsyncStorage.setItem("practiceId", practice.id ?? "");

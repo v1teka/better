@@ -43,6 +43,8 @@ const RATINGS: {
   aura: string;
   label: string;
   reply: string;
+  /** Ends the reply, in the brand color */
+  accent?: string;
   note: string;
 }[] = [
   {
@@ -66,7 +68,8 @@ const RATINGS: {
     emoji: "😊",
     aura: "#F6AD55",
     label: "Хорошо",
-    reply: "Рады, что помогло",
+    reply: "Рады, что стало",
+    accent: "Лучше",
     note: "Запомним, что вам подошло",
   },
 ];
@@ -87,7 +90,7 @@ function BetterTitle() {
   const [word, setWord] = useState(() => randomWord());
 
   useEffect(() => {
-    const interval = setInterval(() => setWord((w) => randomWord(w)), 3200);
+    const interval = setInterval(() => setWord((w) => randomWord(w)), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -107,8 +110,8 @@ function BetterTitle() {
       >
         <Animated.Text
           key={word}
-          entering={FadeInDown.duration(600).easing(Easing.out(Easing.cubic))}
-          exiting={FadeOutUp.duration(500).easing(Easing.in(Easing.cubic))}
+          entering={FadeInDown.duration(900).easing(Easing.out(Easing.cubic))}
+          exiting={FadeOutUp.duration(700).easing(Easing.in(Easing.cubic))}
           numberOfLines={1}
           adjustsFontSizeToFit
           style={{
@@ -549,6 +552,7 @@ export default function HomeScreen() {
                 style={{ fontSize: 26, fontWeight: "700", color: "#2D3748", textAlign: "center" }}
               >
                 {reply.reply}
+                {reply.accent && <Text style={{ color: "#4A90E2" }}> {reply.accent}</Text>}
               </Animated.Text>
               <Animated.Text
                 entering={FadeInDown.delay(300).duration(500)}

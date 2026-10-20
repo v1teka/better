@@ -4,7 +4,7 @@ import * as Haptics from "expo-haptics";
 
 import { setSoundOn, useSoundOn } from "@/lib/sound-setting";
 
-/** Speaker button: turns the background sound and the gong on and off */
+/** Speaker button: turns the gong on and off */
 export function SoundToggle() {
   const soundOn = useSoundOn();
 

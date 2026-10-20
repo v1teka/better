@@ -1,5 +1,5 @@
 /**
- * Whether the app plays sounds (background sound and gong), remembered on the device.
+ * Whether the app plays the gong (in the app and in the timer notification), remembered on the device.
  */
 
 import { useSyncExternalStore } from "react";
