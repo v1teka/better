@@ -27,7 +27,8 @@ npx eas-cli@latest build -p ios --profile production --auto-submit
   загружались в App Store Connect: Manus выгружал 1.0.1–1.0.9. Номер сборки ведёт EAS.
 - Тема: светлая по умолчанию, тёмная — нажатием на логотип на главном экране. Логотип —
   вертикальный iOS-переключатель (`components/logo-switch.tsx`): кружок вверху — светлая,
-  внизу — тёмная; при переключении сквозь него и вокруг пробегает поток (`components/energy-flow.tsx`).
+  внизу — тёмная; при переключении сквозь него пробегает поток (`components/energy-flow.tsx`):
+  собирается над телом, идёт по центру, под телом расходится завихрениями назад и растворяется.
   Цвета обеих тем — `constants/palette.ts`, выбор хранится в `lib/theme-setting.ts`. Новые
   экраны красить через `usePalette()`, а не цветами в коде.
 - Каталог практик — `assets/practices.json`, подбор — `lib/practice-selector.ts`. Каждый

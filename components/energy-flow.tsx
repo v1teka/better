@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Svg, { Circle, ClipPath, Defs, G, Path, Rect } from "react-native-svg";
 import Animated, {
   Easing,
@@ -8,35 +9,21 @@ import Animated, {
 } from "react-native-reanimated";
 
 /**
- * Energy flowing through and around the body (the logo switch) when it is switched.
+ * Energy flowing through the body (the logo switch) when it is switched, after qigong:
+ * qi gathers at the crown, pours down the central channel of the body and, below it, parts
+ * and turns back up around the body — a torus. Only part of the loop is drawn:
  *
- * After qigong («Поднять ци — излить ци»): qi is gathered from around the body and poured in
- * through the crown, down the central channel of the body to the feet; earth qi rises the other
- * way. The body and its qi field form one sphere. So the stream comes in along the axis above
- * the crown, parts there: the straight core goes right through the middle of the body, the
- * narrow arcs pass through it as well (meridians in front of and behind the body), the wide arcs
- * go around it and shape the sphere. All of it gathers at the opposite pole and leaves along
- * the axis.
+ * - the arrows appear at the sides above the body, sweep over the crown and gather into one;
+ * - rush down along the center of the body (drawn in light over the switch);
+ * - below the body part again, curling outward and back up — some in wide loops along the
+ *   sphere, some in tight swirls — and dissolve on the way, so it stays unclear whether they
+ *   flew off to the sides or went back around.
  *
- * Down — cool, as the evening comes (the knob was up); up — warm, the morning.
- * The flow is drawn in two layers: behind the switch in the flow color, and over it in white,
- * clipped to the body, so the stream reads as light passing through it.
+ * Down — cool, as the evening comes (the knob was up); up — the same mirrored, warm, the morning.
+ * Two layers: behind the switch in the flow color, and over it in white, clipped to the body.
  */
 
 export type FlowDirection = "down" | "up";
-
-export const FLOW_DURATION_MS = 1500;
-
-/** Sphere radius around the switch center and the straight stretch beyond each pole */
-const R = 54;
-const AXIS = 36;
-
-/** Canvas size; the canvas is centered on the switch */
-export const FLOW_WIDTH = 2 * R + 16;
-export const FLOW_HEIGHT = 2 * (R + AXIS) + 16;
-
-const CX = FLOW_WIDTH / 2;
-const CY = FLOW_HEIGHT / 2;
 
 const COLORS: Record<FlowDirection, string> = {
   down: "#6F9CF0",
@@ -46,66 +33,156 @@ const COLORS: Record<FlowDirection, string> = {
 /** The stream inside the body: light over the blue switch */
 const INNER_COLOR = "#FFFFFF";
 
-/**
- * A track in the "down" orientation (the "up" flow mirrors it):
- * `a` — a meridian from the top pole to the bottom one, bulging by `a` to the side;
- * `from`/`to` — a straight stretch along the axis
- */
-type Track = { a: number } | { from: number; to: number };
+/** Where the stream gathers above the body and leaves below it */
+const POLE_GAP = 3;
+
+/** A curve leaving a pole: straight `lead`, then a turn of `turn` degrees that tightens by `growth` */
+type CurveSpec = { lead: number; radius: number; turn: number; growth: number };
+
+type StrandSpec = {
+  /** Which side the loop goes to: 1 — right, -1 — left */
+  side: 1 | -1;
+  /** How far the stream bows off the axis inside the body */
+  bulge: number;
+  /** Over the crown into the body */
+  in: CurveSpec;
+  /** Out of the body, curling back */
+  out: CurveSpec;
+  /** Where on the way out it starts to dissolve: 0 — right away, 1 — only at the end */
+  dissolve: number;
+};
+
+// In the "down" orientation; the "up" flow mirrors it.
+const STRAND_SPECS: StrandSpec[] = [
+  // Wide loops: they turn back up, as if going around along the sphere
+  { side: 1, bulge: 0, in: { lead: 6, radius: 16, turn: 120, growth: 0.2 }, out: { lead: 8, radius: 28, turn: 195, growth: 0.2 }, dissolve: 0.6 },
+  { side: -1, bulge: 2, in: { lead: 4, radius: 18, turn: 125, growth: 0.1 }, out: { lead: 4, radius: 33, turn: 185, growth: 0.1 }, dissolve: 0.65 },
+  // Middle loops
+  { side: 1, bulge: 3, in: { lead: 8, radius: 12, turn: 110, growth: 0.4 }, out: { lead: 12, radius: 19, turn: 220, growth: 0.8 }, dissolve: 0.45 },
+  { side: -1, bulge: -3, in: { lead: 6, radius: 14, turn: 115, growth: 0.3 }, out: { lead: 10, radius: 22, turn: 210, growth: 0.5 }, dissolve: 0.4 },
+  // Tight swirls
+  { side: 1, bulge: -2, in: { lead: 8, radius: 9, turn: 95, growth: 0.6 }, out: { lead: 8, radius: 9, turn: 290, growth: 1.5 }, dissolve: 0.45 },
+  { side: -1, bulge: 0, in: { lead: 6, radius: 10, turn: 100, growth: 0.5 }, out: { lead: 6, radius: 11, turn: 260, growth: 1.2 }, dissolve: 0.4 },
+  // Dissolve soon after parting, as if flying off to the sides
+  { side: 1, bulge: 5, in: { lead: 10, radius: 13, turn: 90, growth: 0 }, out: { lead: 14, radius: 24, turn: 130, growth: 0.3 }, dissolve: 0.15 },
+  { side: -1, bulge: -5, in: { lead: 10, radius: 15, turn: 92, growth: 0 }, out: { lead: 12, radius: 28, turn: 120, growth: 0.2 }, dissolve: 0.2 },
+];
 
 type Arrow = {
-  track: Track;
+  strand: number;
   /** ms from the tap */
   delay: number;
   duration: number;
-  /** Share of the track the arrow covers */
+  /** px */
   length: number;
   width: number;
   opacity: number;
 };
 
-const IN: Track = { from: -(R + AXIS), to: -R };
-const OUT: Track = { from: R, to: R + AXIS };
-/** The central channel: straight through the whole body, above the crown to below the feet */
-const CORE: Track = { from: -(R + AXIS), to: R + AXIS };
-
-// Hand-tuned so the flow reads as one stream: in at the crown, through and around the body,
-// out below. Short and long, straight and curved; a second, thinner wave follows the first.
+// Short and long arrows; a second, thinner wave follows the first
 const ARROWS: Arrow[] = [
-  // The stream comes in from above
-  { track: IN, delay: 0, duration: 380, length: 0.8, width: 1.6, opacity: 0.9 },
-  { track: IN, delay: 120, duration: 340, length: 0.4, width: 1.2, opacity: 0.65 },
+  { strand: 0, delay: 0, duration: 1200, length: 34, width: 1.6, opacity: 0.9 },
+  { strand: 1, delay: 80, duration: 1250, length: 18, width: 1.3, opacity: 0.75 },
+  { strand: 2, delay: 140, duration: 1150, length: 26, width: 1.5, opacity: 0.85 },
+  { strand: 3, delay: 60, duration: 1180, length: 14, width: 1.2, opacity: 0.7 },
+  { strand: 4, delay: 200, duration: 1100, length: 22, width: 1.4, opacity: 0.8 },
+  { strand: 5, delay: 260, duration: 1080, length: 12, width: 1.2, opacity: 0.7 },
+  { strand: 6, delay: 120, duration: 1000, length: 20, width: 1.3, opacity: 0.75 },
+  { strand: 7, delay: 220, duration: 1020, length: 30, width: 1.5, opacity: 0.85 },
 
-  // Straight through the middle of the body
-  { track: CORE, delay: 60, duration: 1000, length: 0.3, width: 1.7, opacity: 0.95 },
-  { track: CORE, delay: 260, duration: 950, length: 0.12, width: 1.3, opacity: 0.75 },
-  { track: CORE, delay: 420, duration: 980, length: 0.22, width: 1.5, opacity: 0.85 },
-  { track: CORE, delay: 560, duration: 900, length: 0.1, width: 1.1, opacity: 0.6 },
-
-  // Narrow arcs through the body
-  { track: { a: -8 }, delay: 300, duration: 820, length: 0.3, width: 1.3, opacity: 0.75 },
-  { track: { a: 9 }, delay: 380, duration: 800, length: 0.18, width: 1.2, opacity: 0.65 },
-  { track: { a: -16 }, delay: 340, duration: 860, length: 0.16, width: 1.2, opacity: 0.65 },
-  { track: { a: 17 }, delay: 260, duration: 860, length: 0.34, width: 1.4, opacity: 0.8 },
-
-  // Wide arcs around the body: the sphere
-  { track: { a: -54 }, delay: 230, duration: 900, length: 0.36, width: 1.5, opacity: 0.85 },
-  { track: { a: 54 }, delay: 300, duration: 880, length: 0.18, width: 1.3, opacity: 0.7 },
-  { track: { a: -42 }, delay: 280, duration: 900, length: 0.2, width: 1.3, opacity: 0.7 },
-  { track: { a: 42 }, delay: 220, duration: 920, length: 0.4, width: 1.6, opacity: 0.9 },
-  { track: { a: -30 }, delay: 260, duration: 860, length: 0.32, width: 1.4, opacity: 0.8 },
-  { track: { a: 30 }, delay: 360, duration: 840, length: 0.16, width: 1.2, opacity: 0.65 },
-
-  // Second wave
-  { track: { a: -54 }, delay: 520, duration: 860, length: 0.16, width: 1.1, opacity: 0.55 },
-  { track: { a: 42 }, delay: 560, duration: 840, length: 0.22, width: 1.2, opacity: 0.6 },
-  { track: { a: -30 }, delay: 600, duration: 800, length: 0.14, width: 1.1, opacity: 0.5 },
-  { track: { a: 17 }, delay: 620, duration: 780, length: 0.2, width: 1.1, opacity: 0.55 },
-
-  // Gathered into one, it leaves below
-  { track: OUT, delay: 960, duration: 420, length: 0.8, width: 1.6, opacity: 0.9 },
-  { track: OUT, delay: 1060, duration: 380, length: 0.4, width: 1.2, opacity: 0.65 },
+  { strand: 0, delay: 380, duration: 1150, length: 14, width: 1.2, opacity: 0.6 },
+  { strand: 1, delay: 420, duration: 1200, length: 30, width: 1.4, opacity: 0.7 },
+  { strand: 2, delay: 460, duration: 1100, length: 12, width: 1.1, opacity: 0.55 },
+  { strand: 3, delay: 340, duration: 1150, length: 28, width: 1.4, opacity: 0.75 },
+  { strand: 4, delay: 500, duration: 1050, length: 12, width: 1.1, opacity: 0.55 },
+  { strand: 5, delay: 440, duration: 1080, length: 24, width: 1.3, opacity: 0.65 },
+  { strand: 6, delay: 520, duration: 980, length: 10, width: 1, opacity: 0.5 },
+  { strand: 7, delay: 480, duration: 1000, length: 16, width: 1.2, opacity: 0.6 },
 ];
+
+export const FLOW_DURATION_MS = Math.max(...ARROWS.map((a) => a.delay + a.duration));
+
+/** A strand as a polyline with arc lengths, in the "down" orientation, centered on the body */
+type Strand = {
+  xs: number[];
+  ys: number[];
+  /** Arc length at each point */
+  at: number[];
+  length: number;
+  /** Where the stream is inside the body */
+  centerFrom: number;
+  centerTo: number;
+  fadeInEnd: number;
+  fadeOutFrom: number;
+};
+
+const STEP = 2;
+
+/** Points of a curve leaving (x0, y0) along `heading`; `turnSign` picks the way it turns */
+function curvePoints(x0: number, y0: number, heading: number, spec: CurveSpec, turnSign: number) {
+  const points: [number, number][] = [];
+  let x = x0;
+  let y = y0;
+  let angle = heading;
+  const leadSteps = Math.max(1, Math.round(spec.lead / STEP));
+  for (let i = 0; i < leadSteps; i++) {
+    x += (Math.cos(angle) * spec.lead) / leadSteps;
+    y += (Math.sin(angle) * spec.lead) / leadSteps;
+    points.push([x, y]);
+  }
+  const turn = (spec.turn * Math.PI) / 180;
+  const arc = (turn * spec.radius) / (1 + spec.growth / 2);
+  const steps = Math.max(2, Math.round(arc / STEP));
+  const ds = arc / steps;
+  for (let i = 0; i < steps; i++) {
+    const s = (i + 0.5) * ds;
+    angle += (turnSign * ds * (1 + (spec.growth * s) / arc)) / spec.radius;
+    x += Math.cos(angle) * ds;
+    y += Math.sin(angle) * ds;
+    points.push([x, y]);
+  }
+  return points;
+}
+
+function buildStrand(spec: StrandSpec, bodyHeight: number): Strand {
+  const top = -(bodyHeight / 2 + POLE_GAP);
+  const bottom = bodyHeight / 2 + POLE_GAP;
+
+  // Built leaving the crown upward and turning outward, then reversed: it comes over the crown
+  const incoming = curvePoints(0, top, -Math.PI / 2, spec.in, spec.side).reverse();
+  const center: [number, number][] = [];
+  const centerSteps = Math.round((bottom - top) / STEP);
+  for (let i = 0; i <= centerSteps; i++) {
+    const v = i / centerSteps;
+    center.push([spec.bulge * Math.sin(Math.PI * v), top + (bottom - top) * v]);
+  }
+  // Leaves below heading down and turns outward, then back up
+  const outgoing = curvePoints(0, bottom, Math.PI / 2, spec.out, -spec.side);
+
+  const points = [...incoming, ...center, ...outgoing];
+  const xs: number[] = [];
+  const ys: number[] = [];
+  const at: number[] = [];
+  let length = 0;
+  points.forEach(([x, y], i) => {
+    if (i > 0) length += Math.hypot(x - points[i - 1][0], y - points[i - 1][1]);
+    xs.push(x);
+    ys.push(y);
+    at.push(length);
+  });
+  const centerFrom = at[incoming.length];
+  const centerTo = at[incoming.length + center.length - 1];
+  return {
+    xs,
+    ys,
+    at,
+    length,
+    centerFrom,
+    centerTo,
+    fadeInEnd: centerFrom * 0.6,
+    fadeOutFrom: centerTo + (length - centerTo) * spec.dissolve,
+  };
+}
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -129,59 +206,76 @@ function smoothstep(from: number, to: number, t: number): number {
   return x * x * (3 - 2 * x);
 }
 
+/** Index of the last point at or before arc length `s` */
+function indexAt(strand: Strand, s: number): number {
+  "worklet";
+  let i = 0;
+  while (i < strand.at.length - 2 && strand.at[i + 1] <= s) i++;
+  return i;
+}
+
 function FlowArrow({
   arrow,
+  strand,
   clock,
   flip,
   color,
+  insideOnly,
+  cx,
+  cy,
 }: {
   arrow: Arrow;
+  strand: Strand;
   clock: SharedValue<number>;
   flip: number;
   color: string;
+  /** Skip the arrow while it is outside the body (the layer over the switch) */
+  insideOnly: boolean;
+  cx: number;
+  cy: number;
 }) {
   const animatedProps = useAnimatedProps(() => {
+    const hidden = { d: "M0 0", strokeOpacity: 0 };
     const raw = (clock.value - arrow.delay) / arrow.duration;
-    if (raw <= 0 || raw >= 1) return { d: "M0 0", strokeOpacity: 0 };
+    if (raw <= 0 || raw >= 1) return hidden;
 
-    const track = arrow.track;
-    const p = easeInOut(raw);
-    // The head stops at the end and the tail catches up: the arrows gather into a point
-    const head = Math.min(1, p * (1 + arrow.length));
-    const tail = Math.max(0, p * (1 + arrow.length) - arrow.length);
+    const head = easeInOut(raw) * strand.length;
+    const tail = Math.max(0, head - arrow.length);
+    if (insideOnly && (head < strand.centerFrom || tail > strand.centerTo)) return hidden;
 
-    const steps = "a" in track ? 12 : 1;
-    let d = "";
-    let hx = 0;
-    let hy = 0;
-    for (let i = 0; i <= steps; i++) {
-      const u = tail + ((head - tail) * i) / steps;
-      let x = 0;
-      let y = 0;
-      if ("a" in track) {
-        x = track.a * Math.sin(Math.PI * u);
-        y = -R * Math.cos(Math.PI * u);
-      } else {
-        y = track.from + (track.to - track.from) * u;
-      }
-      hx = CX + x;
-      hy = CY + y * flip;
-      d += (i === 0 ? "M" : " L") + hx.toFixed(1) + " " + hy.toFixed(1);
+    // Fades in as it comes over the crown, dissolves on the way out
+    const mid = (head + tail) / 2;
+    const alpha =
+      smoothstep(0, strand.fadeInEnd, mid) * (1 - smoothstep(strand.fadeOutFrom, strand.length, mid));
+    if (alpha < 0.01) return hidden;
+
+    const pointAt = (s: number): [number, number] => {
+      const i = indexAt(strand, s);
+      const span = strand.at[i + 1] - strand.at[i];
+      const k = span > 0 ? Math.min(1, Math.max(0, (s - strand.at[i]) / span)) : 0;
+      return [
+        cx + strand.xs[i] + (strand.xs[i + 1] - strand.xs[i]) * k,
+        cy + (strand.ys[i] + (strand.ys[i + 1] - strand.ys[i]) * k) * flip,
+      ];
+    };
+
+    const [tx, ty] = pointAt(tail);
+    const [hx, hy] = pointAt(head);
+    let d = "M" + tx.toFixed(1) + " " + ty.toFixed(1);
+    const last = indexAt(strand, head);
+    for (let i = indexAt(strand, tail) + 1; i <= last; i++) {
+      d += " L" + (cx + strand.xs[i]).toFixed(1) + " " + (cy + strand.ys[i] * flip).toFixed(1);
     }
+    d += " L" + hx.toFixed(1) + " " + hy.toFixed(1);
 
-    // Direction of travel at the head, for the arrowhead
-    let dx = 0;
-    let dy = 1;
-    if ("a" in track) {
-      dx = track.a * Math.cos(Math.PI * head);
-      dy = R * Math.sin(Math.PI * head);
-    }
-    dy *= flip;
+    // Arrowhead along the direction of travel
+    const [px, py] = pointAt(Math.max(0, head - 2));
+    const dx = hx - px;
+    const dy = hy - py;
     const norm = Math.sqrt(dx * dx + dy * dy);
-    if (norm > 0) {
+    if (norm > 0.01) {
       const bx = -dx / norm;
       const by = -dy / norm;
-      // The arrowhead shrinks with the arrow as it gathers into the pole
       const size = (2.2 + arrow.width * 1.6) * Math.max(0.4, Math.min(1, (head - tail) / arrow.length));
       const cos = Math.cos(0.5);
       const sin = Math.sin(0.5);
@@ -195,8 +289,7 @@ function FlowArrow({
         " L" + rx.toFixed(1) + " " + ry.toFixed(1);
     }
 
-    const fade = smoothstep(0, 0.12, raw) * (1 - smoothstep(0.72, 1, raw));
-    return { d, strokeOpacity: arrow.opacity * fade };
+    return { d, strokeOpacity: arrow.opacity * alpha };
   });
 
   return (
@@ -211,16 +304,18 @@ function FlowArrow({
   );
 }
 
-/** A point of light at a pole: where the flow comes in, and where it gathers into one */
+/** A point of light where the stream gathers above the body, and where it parts below */
 function PoleGlow({
-  y,
+  cx,
+  cy,
   rise,
   peak,
   fade,
   clock,
   color,
 }: {
-  y: number;
+  cx: number;
+  cy: number;
   rise: number;
   peak: number;
   fade: number;
@@ -230,21 +325,34 @@ function PoleGlow({
   const animatedProps = useAnimatedProps(() => {
     const t = clock.value;
     const glow = smoothstep(rise, peak, t) * (1 - smoothstep(peak, fade, t));
-    return { r: 1.5 + 2.5 * glow, fillOpacity: 0.85 * glow };
+    return { r: 1.5 + 2 * glow, fillOpacity: 0.6 * glow };
   });
-  return <AnimatedCircle cx={CX} cy={y} animatedProps={animatedProps} fill={color} />;
+  return <AnimatedCircle cx={cx} cy={cy} animatedProps={animatedProps} fill={color} />;
 }
 
-/** Does the track cross the body (centered, `halfWidth` to each side)? */
-function crossesBody(track: Track, halfWidth: number): boolean {
-  if ("a" in track) return Math.abs(track.a) < halfWidth;
-  return track.from < 0 && track.to > 0;
+const strandCache = new Map<number, { strands: Strand[]; width: number; height: number }>();
+
+/** Strands for a body of this height, and the canvas that holds them */
+function strandsFor(bodyHeight: number) {
+  let entry = strandCache.get(bodyHeight);
+  if (!entry) {
+    const strands = STRAND_SPECS.map((spec) => buildStrand(spec, bodyHeight));
+    let maxX = 0;
+    let maxY = 0;
+    strands.forEach((strand) => {
+      strand.xs.forEach((x) => (maxX = Math.max(maxX, Math.abs(x))));
+      strand.ys.forEach((y) => (maxY = Math.max(maxY, Math.abs(y))));
+    });
+    entry = { strands, width: Math.ceil(2 * (maxX + 10)), height: Math.ceil(2 * (maxY + 10)) };
+    strandCache.set(bodyHeight, entry);
+  }
+  return entry;
 }
 
 /**
- * One layer of the flow. `back` goes under the switch, `front` over it: the same arrows,
- * clipped to the body (`bodyWidth` × `bodyHeight`, centered) and drawn in light.
- * Both layers follow `clock` (see runFlow).
+ * One layer of the flow, centered on the body (`bodyWidth` × `bodyHeight`); put it inside a box
+ * of the body's size. `back` goes under the switch, `front` over it: the same arrows, clipped to
+ * the body and drawn in light. Both layers follow `clock` (see runFlow).
  */
 export function EnergyFlowLayer({
   direction,
@@ -259,41 +367,60 @@ export function EnergyFlowLayer({
   bodyWidth: number;
   bodyHeight: number;
 }) {
+  const { strands, width, height } = useMemo(() => strandsFor(bodyHeight), [bodyHeight]);
   const flip = direction === "down" ? 1 : -1;
+  const cx = width / 2;
+  const cy = height / 2;
+  const pole = bodyHeight / 2 + POLE_GAP;
 
-  if (layer === "back") {
-    const color = COLORS[direction];
-    return (
-      <Svg width={FLOW_WIDTH} height={FLOW_HEIGHT}>
-        <PoleGlow y={CY - R * flip} rise={200} peak={420} fade={700} clock={clock} color={color} />
-        <PoleGlow y={CY + R * flip} rise={850} peak={1150} fade={1450} clock={clock} color={color} />
-        {ARROWS.map((arrow, index) => (
-          <FlowArrow key={index} arrow={arrow} clock={clock} flip={flip} color={color} />
-        ))}
-      </Svg>
-    );
-  }
+  const arrows = (color: string, insideOnly: boolean) =>
+    ARROWS.map((arrow, index) => (
+      <FlowArrow
+        key={index}
+        arrow={arrow}
+        strand={strands[arrow.strand]}
+        clock={clock}
+        flip={flip}
+        color={color}
+        insideOnly={insideOnly}
+        cx={cx}
+        cy={cy}
+      />
+    ));
 
   return (
-    <Svg width={FLOW_WIDTH} height={FLOW_HEIGHT}>
-      <Defs>
-        <ClipPath id="logo-body">
-          <Rect
-            x={CX - bodyWidth / 2}
-            y={CY - bodyHeight / 2}
-            width={bodyWidth}
-            height={bodyHeight}
-            rx={bodyWidth / 2}
-          />
-        </ClipPath>
-      </Defs>
-      <G clipPath="url(#logo-body)">
-        {ARROWS.map((arrow, index) =>
-          crossesBody(arrow.track, bodyWidth / 2) ? (
-            <FlowArrow key={index} arrow={arrow} clock={clock} flip={flip} color={INNER_COLOR} />
-          ) : null,
-        )}
-      </G>
+    <Svg
+      width={width}
+      height={height}
+      style={{
+        position: "absolute",
+        left: (bodyWidth - width) / 2,
+        top: (bodyHeight - height) / 2,
+        pointerEvents: "none",
+      }}
+    >
+      {layer === "back" ? (
+        <>
+          <PoleGlow cx={cx} cy={cy - pole * flip} rise={200} peak={450} fade={800} clock={clock} color={COLORS[direction]} />
+          <PoleGlow cx={cx} cy={cy + pole * flip} rise={450} peak={750} fade={1150} clock={clock} color={COLORS[direction]} />
+          {arrows(COLORS[direction], false)}
+        </>
+      ) : (
+        <>
+          <Defs>
+            <ClipPath id="logo-body">
+              <Rect
+                x={cx - bodyWidth / 2}
+                y={cy - bodyHeight / 2}
+                width={bodyWidth}
+                height={bodyHeight}
+                rx={bodyWidth / 2}
+              />
+            </ClipPath>
+          </Defs>
+          <G clipPath="url(#logo-body)">{arrows(INNER_COLOR, true)}</G>
+        </>
+      )}
     </Svg>
   );
 }
