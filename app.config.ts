@@ -13,7 +13,6 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: "luchshe",
   userInterfaceStyle: "light",
-  newArchEnabled: true,
   description: "Выбор практики для улучшения ментального состояния",
   ios: {
     supportsTablet: false,
@@ -29,7 +28,6 @@ const config: ExpoConfig = {
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: bundleId,
   },
