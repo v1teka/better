@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, Pressable, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { pickPractice } from "@/lib/practice-selector";
+import { practiceDuration } from "@/lib/scoring";
 import type { Practice, UserState, Energy, Focus, Tension, Time } from "@/types/practice";
-
-const TIME_OPTIONS: Time[] = [1, 2, 3, 5, 10];
 
 /**
  * Recommendation Screen - Shows selected practice
@@ -18,30 +17,21 @@ export default function RecommendationScreen() {
   const params = useLocalSearchParams();
 
   const [practice, setPractice] = useState<Practice | null>(null);
+  const [duration, setDuration] = useState<Time | null>(null);
 
-  // Parse state from params
-  const parsedTime = parseInt(params.time as string);
-
-  // If user didn't select time, pick randomly from 1/2/3/5/10 once and keep it stable.
-  // useRef ensures the random value is fixed for the lifetime of this screen instance.
-  const resolvedTimeRef = useRef<Time>(
-    isNaN(parsedTime)
-      ? TIME_OPTIONS[Math.floor(Math.random() * TIME_OPTIONS.length)]
-      : (parsedTime as Time)
-  );
-  const resolvedTime = resolvedTimeRef.current;
-
-  const state: UserState = {
-    energy: params.energy as Energy,
-    focus: params.focus as Focus,
-    tension: params.tension as Tension,
-    time: resolvedTime,
-  };
-
-  // Pick practice on mount — time is always set, so filter works correctly
+  // Pick the practice and its timer length once per screen instance.
+  // Time is an upper bound; without it the practice is not limited by time.
   useEffect(() => {
+    const parsedTime = parseInt(params.time as string, 10);
+    const state: UserState = {
+      energy: params.energy as Energy,
+      focus: params.focus as Focus,
+      tension: params.tension as Tension,
+      time: isNaN(parsedTime) ? null : (parsedTime as Time),
+    };
     const selected = pickPractice(state);
     setPractice(selected);
+    setDuration(practiceDuration(selected, state.time));
   }, []);
 
   const triggerMedium = () => {
@@ -54,13 +44,13 @@ export default function RecommendationScreen() {
   };
 
   const handleStart = () => {
-    if (!practice) return;
+    if (!practice || !duration) return;
     triggerMedium();
     router.push({
       pathname: "/practice",
       params: {
         practice: JSON.stringify(practice),
-        selectedTime: resolvedTime.toString(),
+        selectedTime: duration.toString(),
       },
     });
   };

@@ -4,7 +4,7 @@
  */
 
 import type { Practice, UserState, ScoredPractice } from "@/types/practice";
-import { scorePractice } from "./scoring";
+import { fitsTime, scorePractice } from "./scoring";
 import practicesData from "@/assets/practices.json";
 
 // Load practices from JSON
@@ -101,8 +101,9 @@ export function pickPractice(state: UserState): Practice {
   }
 
   const candidates: ScoredPractice[] = practices
-    // 1. Фильтр по времени (пропускаем если время не выбрано)
-    .filter((p) => state.time == null || p.time.includes(state.time))
+    // 1. Фильтр по времени: практика укладывается в доступное время
+    // (пропускаем, если время не выбрано)
+    .filter((p) => fitsTime(p, state.time))
 
     // 2. Минимальная безопасность
     .filter((p) => {
