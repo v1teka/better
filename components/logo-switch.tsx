@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
+  type SharedValue,
 } from "react-native-reanimated";
 
 import {
@@ -21,9 +24,11 @@ import {
  * bottom meet like the horizon over water; the white knob is the moon above it.
  * Colors are taken from the app icon.
  *
- * `down` moves the knob below the horizon. With `onPress` the logo works as a switch:
- * the knob stretches while pressed, like the iOS one, and springs to the other end,
- * and energy flows through it the way the knob goes (components/energy-flow.tsx).
+ * `down` moves the knob below the horizon. With `onPress` the logo works as a switch, like
+ * the iOS one: tap it, or drag the knob — it follows the finger, stretches while held, ticks
+ * when it crosses the horizon and on release springs to the end its momentum carries it to.
+ * When it does switch, `onPress` is called and energy flows through it the way the
+ * knob went (components/energy-flow.tsx).
  */
 export function LogoSwitch({
   down,
@@ -49,12 +54,30 @@ export function LogoSwitch({
 
   const reduceMotion = useReducedMotion();
   const [flow, setFlow] = useState<FlowDirection | null>(null);
-  const flowId = useRef(0);
+  const flowId = useSharedValue(0);
   const flowClock = useSharedValue(0);
 
   useEffect(() => {
     position.value = withSpring(down ? 1 : 0, { damping: 16, stiffness: 170, mass: 0.9 });
   }, [down, position]);
+
+  // Switching: the flow the way the knob goes, then the caller's handler
+  const toggle = () => {
+    if (!onPress) return;
+    if (!reduceMotion) {
+      // Each switch starts a new run; a switch mid-run restarts it the other way
+      const id = flowId.value + 1;
+      flowId.value = id;
+      setFlow(down ? "up" : "down");
+      runFlow(flowClock);
+      setTimeout(() => {
+        if (flowId.value === id) setFlow(null);
+      }, FLOW_DURATION_MS + 100);
+    }
+    onPress();
+  };
+
+  const gesture = switchGesture({ position, pressed, travel, down, onSwitch: toggle });
 
   // While pressed the knob grows toward the other end, as the iOS switch does
   const knobStyle = useAnimatedStyle(() => {
@@ -126,33 +149,16 @@ export function LogoSwitch({
 
   if (!onPress) return logo;
 
-  const handlePress = () => {
-    if (!reduceMotion) {
-      // Each tap starts a new run; a tap mid-run restarts it the other way
-      const id = ++flowId.current;
-      setFlow(down ? "up" : "down");
-      runFlow(flowClock);
-      setTimeout(() => {
-        if (flowId.current === id) setFlow(null);
-      }, FLOW_DURATION_MS + 100);
-    }
-    onPress();
-  };
-
   return (
-    <Pressable
-      onPress={handlePress}
-      onPressIn={() => {
-        pressed.value = withTiming(1, { duration: 120 });
-      }}
-      onPressOut={() => {
-        pressed.value = withTiming(0, { duration: 200 });
-      }}
-      hitSlop={20}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: down }}
-      accessibilityLabel={accessibilityLabel}
-    >
+    <GestureDetector gesture={gesture}>
+      <View
+        accessible
+        accessibilityRole="switch"
+        accessibilityState={{ checked: down }}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityActions={[{ name: "activate" }]}
+        onAccessibilityAction={toggle}
+      >
       {/* The flow behind the switch, the switch, and the flow through it on top */}
       <View style={{ width, height }}>
         {flow && (
@@ -163,6 +169,77 @@ export function LogoSwitch({
           <EnergyFlowLayer direction={flow} clock={flowClock} layer="front" bodyWidth={width} bodyHeight={height} />
         )}
       </View>
-    </Pressable>
+      </View>
+    </GestureDetector>
   );
+}
+
+/**
+ * Tap or drag the knob, as on the iOS switch. Kept outside the component: the handlers run
+ * on gestures, not during render.
+ */
+function switchGesture({
+  position,
+  pressed,
+  travel,
+  down,
+  onSwitch,
+}: {
+  position: SharedValue<number>;
+  pressed: SharedValue<number>;
+  travel: number;
+  down: boolean;
+  onSwitch: () => void;
+}) {
+  let dragStart = 0;
+  let dragSide = false;
+
+  const tap = Gesture.Tap()
+    .runOnJS(true)
+    .hitSlop(20)
+    .onBegin(() => {
+      pressed.value = withTiming(1, { duration: 120 });
+    })
+    .onEnd((_e, success) => {
+      if (!success) return;
+      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onSwitch();
+    })
+    .onFinalize(() => {
+      pressed.value = withTiming(0, { duration: 200 });
+    });
+
+  const drag = Gesture.Pan()
+    .runOnJS(true)
+    .hitSlop(20)
+    .minDistance(3)
+    .onStart(() => {
+      dragStart = position.value;
+      dragSide = position.value > 0.5;
+      pressed.value = withTiming(1, { duration: 120 });
+    })
+    .onUpdate((e) => {
+      const next = Math.min(1, Math.max(0, dragStart + e.translationY / travel));
+      position.value = next;
+      // A tick when the knob crosses the horizon
+      if (next > 0.5 !== dragSide) {
+        dragSide = next > 0.5;
+        if (Platform.OS !== "web") Haptics.selectionAsync();
+      }
+    })
+    .onEnd((e) => {
+      // Where the knob would get with its momentum: a flick carries it over, a slow drag doesn't
+      const toDown = position.value + (e.velocityY * 0.12) / travel > 0.5;
+      if (toDown !== down) {
+        onSwitch();
+      } else {
+        // Not far enough: back where it was
+        position.value = withSpring(toDown ? 1 : 0, { damping: 16, stiffness: 170, mass: 0.9 });
+      }
+    })
+    .onFinalize(() => {
+      pressed.value = withTiming(0, { duration: 200 });
+    });
+
+  return Gesture.Exclusive(drag, tap);
 }
