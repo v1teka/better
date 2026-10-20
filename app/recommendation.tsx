@@ -49,7 +49,7 @@ export default function RecommendationScreen() {
     router.push({
       pathname: "/practice",
       params: {
-        practice: JSON.stringify(practice),
+        practiceId: practice.id,
         selectedTime: duration.toString(),
       },
     });

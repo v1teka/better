@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Pressable, Platform } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
+import { Redirect, useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
 import type { Practice } from "@/types/practice";
 import { MarkdownText } from "@/components/markdown-text";
+import { getPracticeById } from "@/lib/practice-selector";
 import { usePracticeTimer } from "@/lib/practice-timer";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,9 +20,17 @@ const gongSound = require("@/assets/sounds/gong.mp3");
  * and a countdown timer based on the user-selected time.
  */
 export default function PracticeScreen() {
-  const params = useLocalSearchParams();
-  const practice: Practice = JSON.parse(params.practice as string);
-  const totalSeconds = parseInt(params.selectedTime as string, 10) * 60;
+  const params = useLocalSearchParams<{ practiceId?: string; selectedTime?: string }>();
+  const practice = getPracticeById(params.practiceId ?? "");
+  const minutes = parseInt(params.selectedTime ?? "", 10);
+  const duration = isNaN(minutes) || minutes <= 0 ? practice?.time[0] ?? 0 : minutes;
+
+  // A broken link (unknown practice) leads home instead of crashing
+  if (!practice) return <Redirect href="/home" />;
+  return <PracticeView practice={practice} totalSeconds={duration * 60} />;
+}
+
+function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSeconds: number }) {
   const isCompletingRef = useRef(false);
 
   // Audio player for gong sound

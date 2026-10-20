@@ -131,6 +131,13 @@ export function pickPractice(state: UserState): Practice {
 }
 
 /**
+ * Find a practice (including fallbacks) by id
+ */
+export function getPracticeById(id: string): Practice | undefined {
+  return practices.find((p) => p.id === id) ?? FALLBACK_PRACTICES.find((p) => p.id === id);
+}
+
+/**
  * Get all practices (for testing/debugging)
  */
 export function getAllPractices(): Practice[] {
