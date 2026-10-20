@@ -26,6 +26,16 @@ let scheduledId: string | null = null;
 // timer was paused or stopped does not leave a stray notification behind.
 let generation = 0;
 
+/** Ask for notifications once, with context (onboarding); true if allowed */
+export async function requestTimerPermission(): Promise<boolean> {
+  if (!isSupported) return false;
+  try {
+    return await ensurePermission();
+  } catch {
+    return false;
+  }
+}
+
 async function ensurePermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;

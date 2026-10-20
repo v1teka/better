@@ -19,6 +19,7 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear */}
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
             <Stack.Screen name="home" />
             <Stack.Screen name="survey" />
             <Stack.Screen name="recommendation" />

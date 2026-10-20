@@ -1,85 +1,220 @@
-import { View, Text, Pressable, Platform, SafeAreaView, StatusBar } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, Pressable, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  FadeOutUp,
+  ZoomIn,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withRepeat,
+  withSpring,
   withTiming,
-  Easing,
 } from "react-native-reanimated";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { addFeedback } from "@/lib/history";
-import type { Rating } from "@/types/practice";
 
-type FeedbackState = "normal" | "feedback" | "thankyou";
+import { ALL_BETTER_WORDS } from "@/constants/better-words";
+import { addFeedback } from "@/lib/history";
+import { getPracticeById } from "@/lib/practice-selector";
+import type { Practice, Rating } from "@/types/practice";
 
 /**
- * Home Screen - Landing page with gradient background and clear button
+ * intro    — logo, title, rotating «Слова Лучше», «Начать»
+ * feedback — after a practice: how did it go, centered
+ * word     — the practice's «Слово Лучше» as a closing note, then back to intro
  */
-export default function HomeScreen() {
-  const router = useRouter();
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.8);
-  const [feedbackState, setFeedbackState] = useState<FeedbackState>("normal");
-  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+type Phase = "intro" | "feedback" | "word";
 
-  const cardOpacity = useSharedValue(0);
-  const cardScale = useSharedValue(0.9);
-  const buttonOpacity = useSharedValue(1);
-  const buttonScale = useSharedValue(1);
+// How long the closing word stays before the home screen returns
+const WORD_HOLD_MS = 2400;
+
+const RATINGS: { rating: Rating; emoji: string; aura: string; label: string }[] = [
+  { rating: "bad", emoji: "😔", aura: "#B794F4", label: "Плохо" },
+  { rating: "neutral", emoji: "😐", aura: "#90CDF4", label: "Нормально" },
+  { rating: "good", emoji: "😊", aura: "#F6AD55", label: "Хорошо" },
+];
+
+function randomWord(except?: string): string {
+  const pool = ALL_BETTER_WORDS.filter((w) => w !== except);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** «Слова Лучше» replacing each other under the title */
+function RotatingWord() {
+  const [word, setWord] = useState(() => randomWord());
 
   useEffect(() => {
-    logoOpacity.value = withTiming(1, {
-      duration: 1500,
-      easing: Easing.out(Easing.ease),
-    });
-    logoScale.value = withTiming(1, {
-      duration: 1500,
-      easing: Easing.out(Easing.ease),
-    });
+    const interval = setInterval(() => setWord((w) => randomWord(w)), 3500);
+    return () => clearInterval(interval);
+  }, []);
 
-    setTimeout(() => {
-      logoOpacity.value = withRepeat(
-        withTiming(0.8, {
-          duration: 6000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      );
-    }, 1600);
+  return (
+    <View style={{ height: 28, alignSelf: "stretch", alignItems: "center" }}>
+      <Animated.Text
+        key={word}
+        entering={FadeIn.duration(900)}
+        exiting={FadeOut.duration(900)}
+        style={{ position: "absolute", fontSize: 18, color: "#718096" }}
+      >
+        {word}
+      </Animated.Text>
+    </View>
+  );
+}
 
-    checkFeedbackFlag();
+/**
+ * Emoji button with a soft aura: it breathes while waiting for a choice,
+ * blooms when chosen; the others fade back. The positive one glows the most.
+ */
+function EmojiChoice({
+  emoji,
+  aura,
+  label,
+  strong,
+  index,
+  selected,
+  dimmed,
+  onPress,
+}: {
+  emoji: string;
+  aura: string;
+  label: string;
+  strong: boolean;
+  index: number;
+  selected: boolean;
+  dimmed: boolean;
+  onPress: () => void;
+}) {
+  const breath = useSharedValue(0);
+  const bloom = useSharedValue(0);
+
+  useEffect(() => {
+    breath.value = withDelay(
+      index * 400,
+      withRepeat(withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.ease) }), -1, true),
+    );
   }, []);
 
   useEffect(() => {
-    if (feedbackState === "feedback" || feedbackState === "thankyou") {
-      cardOpacity.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-      });
-      cardScale.value = withTiming(1, {
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-      });
-    }
-    // "normal" state — card is already hidden via dismissCard animation
-  }, [feedbackState]);
+    bloom.value = withSpring(selected ? 1 : 0, { damping: 12, stiffness: 120 });
+  }, [selected]);
+
+  const auraStyle = useAnimatedStyle(() => {
+    const idleScale = 1 + breath.value * (strong ? 0.35 : 0.2);
+    const idleOpacity = (strong ? 0.3 : 0.18) + breath.value * 0.15;
+    return {
+      opacity: idleOpacity + bloom.value * (0.6 - idleOpacity),
+      transform: [{ scale: idleScale + bloom.value * (1.9 - idleScale) }],
+    };
+  });
+
+  const emojiStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + bloom.value * 0.2 }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => ({
+        width: 64,
+        height: 64,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: dimmed ? 0.35 : pressed ? 0.8 : 1,
+      })}
+    >
+      <Animated.View
+        style={[
+          { position: "absolute", width: 56, height: 56, borderRadius: 28, backgroundColor: aura },
+          auraStyle,
+        ]}
+      />
+      <Animated.View
+        style={[
+          {
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          emojiStyle,
+        ]}
+      >
+        <Text style={{ fontSize: 28 }}>{emoji}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/**
+ * Home Screen - Landing page with gradient background; after a practice it asks how it went
+ */
+export default function HomeScreen() {
+  const router = useRouter();
+  // Development only: /home?preview=<practiceId> opens the rating card right away
+  const { preview } = useLocalSearchParams<{ preview?: string }>();
+  const [phase, setPhase] = useState<Phase | null>(null);
+  const [practice, setPractice] = useState<Practice | null>(null);
+  const [selected, setSelected] = useState<Rating | null>(null);
+  const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.8);
+
+  useEffect(() => {
+    checkFeedbackFlag();
+    return () => timeouts.current.forEach(clearTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "intro") return;
+    logoOpacity.value = 0;
+    logoScale.value = 0.8;
+    logoOpacity.value = withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) }, () => {
+      logoOpacity.value = withRepeat(
+        withTiming(0.8, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true,
+      );
+    });
+    logoScale.value = withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) });
+  }, [phase]);
+
+  const later = (fn: () => void, ms: number) => {
+    timeouts.current.push(setTimeout(fn, ms));
+  };
 
   const checkFeedbackFlag = async () => {
+    if (__DEV__ && preview) {
+      setPractice(getPracticeById(preview) ?? null);
+      setPhase("feedback");
+      return;
+    }
     try {
       const showFeedback = await AsyncStorage.getItem("showFeedback");
       if (showFeedback === "true") {
-        setFeedbackState("feedback");
         await AsyncStorage.removeItem("showFeedback");
+        const practiceId = await AsyncStorage.getItem("practiceId");
+        setPractice(practiceId ? getPracticeById(practiceId) ?? null : null);
+        setPhase("feedback");
+        return;
       }
     } catch (error) {
       console.error("Error checking feedback flag:", error);
     }
+    setPhase("intro");
   };
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
@@ -87,67 +222,33 @@ export default function HomeScreen() {
     transform: [{ scale: logoScale.value }],
   }));
 
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: cardOpacity.value,
-    transform: [{ scale: cardScale.value }],
-  }));
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
-    transform: [{ scale: buttonScale.value }],
-  }));
-
   const handleStart = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push("/survey");
   };
 
-  const dismissCard = (delay = 0) => {
-    setTimeout(() => {
-      cardOpacity.value = withTiming(0, { duration: 250, easing: Easing.in(Easing.ease) });
-      cardScale.value = withTiming(0.9, { duration: 250, easing: Easing.in(Easing.ease) });
-      setTimeout(() => {
-        // Reset button to invisible before showing it
-        buttonOpacity.value = 0;
-        buttonScale.value = 0.92;
-        setFeedbackState("normal");
-        setSelectedEmoji(null);
-        // Animate button in after state update
-        setTimeout(() => {
-          buttonOpacity.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
-          buttonScale.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
-        }, 30);
-      }, 260);
-    }, delay);
-  };
-
-  const handleEmojiSelect = async (rating: Rating) => {
+  const handleRating = (rating: Rating) => {
+    if (selected) return;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedEmoji(rating);
-    AsyncStorage.getItem("practiceId")
-      .then((practiceId) => (practiceId ? addFeedback(practiceId, rating) : undefined))
-      .catch(() => {});
-    setTimeout(() => {
-      // Animate card out first, then switch to thankyou
-      cardOpacity.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) });
-      cardScale.value = withTiming(0.9, { duration: 200, easing: Easing.in(Easing.ease) });
-      setTimeout(() => {
-        setFeedbackState("thankyou");
-        // thankyou card animates in via useEffect, then dismisses after 1500ms
-        dismissCard(1500);
-      }, 210);
-    }, 400);
+    setSelected(rating);
+    if (practice) addFeedback(practice.id, rating);
+    // Let the aura bloom, then the card drifts up and the closing word comes in
+    later(() => {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPhase("word");
+    }, 700);
+    later(() => setPhase("intro"), 700 + WORD_HOLD_MS);
   };
 
   const handleSkip = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    dismissCard(0);
+    setPhase("intro");
   };
+
+  const closingWord = practice?.word ?? "Лучше быть";
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar barStyle="dark-content" />
-
       <LinearGradient
         colors={["#FFE5D9", "#D9F7F1"]}
         start={{ x: 0.5, y: 0 }}
@@ -201,166 +302,45 @@ export default function HomeScreen() {
       />
 
       <SafeAreaView style={{ flex: 1 }}>
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingHorizontal: 24,
-            paddingTop: 48,
-            paddingBottom: 80,
-          }}
-        >
-          {/* Logo — at top */}
-          <View style={{ marginBottom: 0, paddingTop: 24 }}>
-            <Animated.View style={logoAnimatedStyle}>
-              <Image
-                source={require("../assets/images/logo.png")}
-                style={{ width: 56, height: 100 }}
-                contentFit="contain"
-              />
-            </Animated.View>
-          </View>
-
-          {/* Title */}
-          <View style={{ alignItems: "center" }}>
-            <Text
+        <View style={{ flex: 1 }}>
+          {phase === "intro" && (
+            <Animated.View
+              entering={FadeIn.duration(600)}
+              exiting={FadeOut.duration(300)}
               style={{
-                fontSize: 48,
-                fontWeight: "700",
-                color: "#2D3748",
-                letterSpacing: -1,
-                marginBottom: 8,
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 24,
+                paddingTop: 72,
+                paddingBottom: 80,
               }}
             >
-              Лучше
-            </Text>
-            <Text
-              style={{
-                fontSize: 15,
-                color: "#718096",
-                textAlign: "center",
-                lineHeight: 22,
-              }}
-            >
-              {"Практика для улучшения\nментального состояния"}
-            </Text>
-          </View>
+              {/* Logo — at top */}
+              <Animated.View style={logoAnimatedStyle}>
+                <Image
+                  source={require("../assets/images/logo.png")}
+                  style={{ width: 56, height: 100 }}
+                  contentFit="contain"
+                />
+              </Animated.View>
 
-          {/* Card / button area — below title, does not affect title position */}
-          <View style={{ alignItems: "center" }}>
-            {feedbackState === "feedback" && (
-              <Animated.View
-                style={[
-                  cardAnimatedStyle,
-                  {
-                    width: 280,
-                    borderRadius: 24,
-                    backgroundColor: "rgba(255, 255, 255, 0.92)",
-                    padding: 28,
-                    marginBottom: 24,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 20,
-                    elevation: 8,
-                    borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.6)",
-                    alignItems: "center",
-                  },
-                ]}
-              >
-                <View
+              {/* Title with «Слова Лучше» */}
+              <View style={{ alignItems: "center", alignSelf: "stretch", gap: 8 }}>
+                <Text
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: "#4CAF50",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: 12,
+                    fontSize: 48,
+                    fontWeight: "700",
+                    color: "#2D3748",
+                    letterSpacing: -1,
                   }}
                 >
-                  <Text style={{ fontSize: 24, color: "white", fontWeight: "bold" }}>{"\u2713"}</Text>
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: "600", color: "#2D3748", marginBottom: 4 }}>
-                  Практика завершена
+                  Лучше
                 </Text>
-                <Text style={{ fontSize: 17, color: "#2D3748", marginBottom: 20 }}>
-                  Как прошла практика?
-                </Text>
-                <View style={{ flexDirection: "row", gap: 16, marginBottom: 16 }}>
-                  {[
-                    { emoji: "\ud83d\ude14", rating: "bad" as const },
-                    { emoji: "\ud83d\ude10", rating: "neutral" as const },
-                    { emoji: "\ud83d\ude0a", rating: "good" as const },
-                  ].map((item) => (
-                    <Pressable
-                      key={item.rating}
-                      onPress={() => handleEmojiSelect(item.rating)}
-                      style={({ pressed }) => ({
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        backgroundColor:
-                          selectedEmoji === item.rating ? "#4A90E2" : "rgba(240, 240, 240, 0.9)",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        transform: [{ scale: pressed ? 0.9 : selectedEmoji === item.rating ? 1.15 : 1 }],
-                      })}
-                    >
-                      <Text style={{ fontSize: 28 }}>{item.emoji}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <Pressable onPress={handleSkip}>
-                  <Text style={{ fontSize: 14, color: "#A0AEC0", textDecorationLine: "underline" }}>
-                    Пропустить
-                  </Text>
-                </Pressable>
-              </Animated.View>
-            )}
+                <RotatingWord />
+              </View>
 
-            {feedbackState === "thankyou" && (
-              <Animated.View
-                style={[
-                  cardAnimatedStyle,
-                  {
-                    width: 280,
-                    borderRadius: 24,
-                    backgroundColor: "rgba(255, 255, 255, 0.92)",
-                    padding: 40,
-                    marginBottom: 24,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 8 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 20,
-                    elevation: 8,
-                    alignItems: "center",
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor: "#4CAF50",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginBottom: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 24, color: "white", fontWeight: "bold" }}>{"\u2713"}</Text>
-                </View>
-                <Text style={{ fontSize: 20, fontWeight: "600", color: "#4CAF50" }}>
-                  Спасибо!
-                </Text>
-              </Animated.View>
-            )}
-
-            {feedbackState === "normal" && (
-              <Animated.View style={buttonAnimatedStyle}>
+              <Animated.View entering={FadeInDown.delay(250).springify().damping(16)}>
                 <Pressable
                   onPress={handleStart}
                   style={({ pressed }) => ({
@@ -390,8 +370,112 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
               </Animated.View>
-            )}
-          </View>
+            </Animated.View>
+          )}
+
+          {phase === "feedback" && (
+            <Animated.View
+              entering={FadeInDown.springify().damping(16)}
+              exiting={FadeOutUp.duration(450)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+              }}
+            >
+              <View
+                style={{
+                  width: 300,
+                  borderRadius: 28,
+                  backgroundColor: "rgba(255, 255, 255, 0.92)",
+                  paddingVertical: 32,
+                  paddingHorizontal: 24,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 20,
+                  elevation: 8,
+                  borderWidth: 1,
+                  borderColor: "rgba(255, 255, 255, 0.6)",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    letterSpacing: 1.5,
+                    textTransform: "uppercase",
+                    color: "#4CAF50",
+                    marginBottom: 8,
+                  }}
+                >
+                  Практика завершена
+                </Text>
+                {practice && (
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      color: "#718096",
+                      textAlign: "center",
+                      marginBottom: 16,
+                    }}
+                  >
+                    {practice.title}
+                  </Text>
+                )}
+                <Text style={{ fontSize: 22, fontWeight: "600", color: "#2D3748", marginBottom: 24 }}>
+                  Как прошло?
+                </Text>
+                <View style={{ flexDirection: "row", gap: 20, marginBottom: 24 }}>
+                  {RATINGS.map((item, index) => (
+                    <EmojiChoice
+                      key={item.rating}
+                      emoji={item.emoji}
+                      aura={item.aura}
+                      label={item.label}
+                      strong={item.rating === "good"}
+                      index={index}
+                      selected={selected === item.rating}
+                      dimmed={selected != null && selected !== item.rating}
+                      onPress={() => handleRating(item.rating)}
+                    />
+                  ))}
+                </View>
+                <Pressable onPress={handleSkip} hitSlop={10} disabled={selected != null}>
+                  <Text style={{ fontSize: 14, color: "#A0AEC0" }}>Пропустить</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+          )}
+
+          {phase === "word" && (
+            <Animated.View
+              entering={ZoomIn.delay(250).springify().damping(14)}
+              exiting={FadeOutUp.duration(600)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 24,
+                gap: 12,
+              }}
+            >
+              <Text style={{ fontSize: 34, fontWeight: "700", color: "#2D3748", textAlign: "center" }}>
+                {closingWord}
+              </Text>
+              <Text style={{ fontSize: 15, color: "#718096" }}>Спасибо, что отметили</Text>
+            </Animated.View>
+          )}
         </View>
       </SafeAreaView>
     </View>
