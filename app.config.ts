@@ -48,6 +48,15 @@ const config: ExpoConfig = {
       },
     ],
     [
+      "expo-notifications",
+      {
+        // Only local notifications: the gong when a practice timer ends
+        // while the screen is locked. No remote push is sent.
+        mode: "production",
+        sounds: ["./assets/sounds/gong.caf"],
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",

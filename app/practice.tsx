@@ -3,10 +3,11 @@ import { useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
 import type { Practice } from "@/types/practice";
 import { MarkdownText } from "@/components/markdown-text";
+import { usePracticeTimer } from "@/lib/practice-timer";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -21,11 +22,6 @@ export default function PracticeScreen() {
   const params = useLocalSearchParams();
   const practice: Practice = JSON.parse(params.practice as string);
   const totalSeconds = parseInt(params.selectedTime as string, 10) * 60;
-
-  const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isDone, setIsDone] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isCompletingRef = useRef(false);
 
   // Audio player for gong sound
@@ -33,58 +29,41 @@ export default function PracticeScreen() {
   const playerRef = useRef(player);
   playerRef.current = player;
 
+  const { secondsLeft, isRunning, isDone, start, toggle, stop } = usePracticeTimer({
+    totalSeconds,
+    notification: { title: practice.title, body: "Время вышло. Можно завершать" },
+    onFinish: (late) => {
+      // If the app was in the background, the notification has already rung
+      if (late) return;
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        playerRef.current.seekTo(0);
+        playerRef.current.play();
+      } catch (_) {}
+    },
+  });
+
   // Enable audio in iOS silent mode
   useEffect(() => {
     if (Platform.OS !== "web") {
       setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
     }
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
       try { playerRef.current.remove(); } catch (_) {}
     };
   }, []);
 
   // Start timer automatically when screen mounts
   useEffect(() => {
-    setIsRunning(true);
-  }, []);
-
-  useEffect(() => {
-    if (isRunning && secondsLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft((prev) => {
-            if (prev <= 1) {
-            clearInterval(intervalRef.current!);
-            setIsRunning(false);
-            setIsDone(true);
-            if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            // Play gong sound
-            try {
-              player.seekTo(0);
-              player.play();
-            } catch (_) {}
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (!isRunning && intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning]);
+    start();
+  }, [start]);
 
   const handleComplete = async () => {
     // Prevent double-tap or race condition
     if (isCompletingRef.current) return;
     isCompletingRef.current = true;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    stop();
     try {
       await AsyncStorage.setItem("showFeedback", "true");
       await AsyncStorage.setItem("practiceId", practice.id ?? "");
@@ -160,7 +139,7 @@ export default function PracticeScreen() {
                 handleComplete();
               } else {
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsRunning((r) => !r);
+                toggle();
               }
             }}
             style={({ pressed }) => ({
@@ -221,7 +200,7 @@ export default function PracticeScreen() {
             <Pressable
               onPress={() => {
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setIsRunning((r) => !r);
+                toggle();
               }}
               style={({ pressed }) => ({
                 marginTop: 12,
