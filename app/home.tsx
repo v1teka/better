@@ -580,7 +580,7 @@ export default function HomeScreen() {
                 style={{ fontSize: 26, fontWeight: "700", color: palette.text, textAlign: "center" }}
               >
                 {reply.reply}
-                {reply.accent && <Text style={{ color: "#4A90E2" }}> {reply.accent}</Text>}
+                {reply.accent && <Text style={{ color: palette.accent }}> {reply.accent}</Text>}
               </Animated.Text>
               <Animated.Text
                 entering={FadeInDown.delay(300).duration(500)}
