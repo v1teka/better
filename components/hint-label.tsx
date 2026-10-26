@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
 import { usePalette } from "@/lib/theme-setting";
@@ -13,13 +18,27 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
   const palette = usePalette();
   const [open, setOpen] = useState(false);
 
+  // 0 — folded, 1 — unfolded; the explanation's natural height is measured once it lays out
+  const progress = useSharedValue(0);
+  const hintHeight = useSharedValue(0);
+
   const toggle = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setOpen((o) => !o);
+    const next = !open;
+    setOpen(next);
+    progress.value = withTiming(next ? 1 : 0, {
+      duration: next ? 240 : 180,
+      easing: next ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+    });
   };
 
+  const hintStyle = useAnimatedStyle(() => ({
+    height: hintHeight.value * progress.value,
+    opacity: progress.value,
+  }));
+
   return (
-    <View style={{ alignItems: "center", gap: 8 }}>
+    <View style={{ alignItems: "center" }}>
       <Pressable
         onPress={toggle}
         hitSlop={10}
@@ -67,21 +86,31 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
         </View>
       </Pressable>
 
-      {open && (
-        <Animated.Text
-          entering={FadeIn.duration(250)}
-          exiting={FadeOut.duration(150)}
-          style={{
-            fontSize: 14,
-            lineHeight: 20,
-            color: palette.textSecondary,
-            textAlign: "center",
-            maxWidth: 300,
+      {/* The explanation unfolds and folds: its height and opacity are animated, so what is
+          below moves smoothly instead of jumping */}
+      <Animated.View style={[{ alignSelf: "stretch", overflow: "hidden" }, hintStyle]}>
+        <View
+          onLayout={(e) => {
+            hintHeight.value = e.nativeEvent.layout.height;
           }}
+          style={{ position: "absolute", left: 0, right: 0, alignItems: "center", paddingTop: 8 }}
+          // Folded, it is still in the tree: keep screen readers off it until it opens
+          accessibilityElementsHidden={!open}
+          importantForAccessibility={open ? "auto" : "no-hide-descendants"}
         >
-          {hint}
-        </Animated.Text>
-      )}
+          <Text
+            style={{
+              fontSize: 14,
+              lineHeight: 20,
+              color: palette.textSecondary,
+              textAlign: "center",
+              maxWidth: 300,
+            }}
+          >
+            {hint}
+          </Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
