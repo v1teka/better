@@ -125,6 +125,11 @@ export function LogoSwitch({
   const lastFrameAt = useSharedValue(-1);
   // After the finger is lifted: 1 — the stream plays on to its end, -1 — it goes back, 0 — dragging
   const releasing = useSharedValue(0);
+  // Where a drag started: the finger's offset when it was recognized, and the knob's position;
+  // and which side of the horizon the knob was last on (for the tick without the stream)
+  const startFinger = useSharedValue(0);
+  const startPosition = useSharedValue(0);
+  const lastSide = useSharedValue(0);
 
   const scrub = useFrameCallback((frame) => {
     if (scrubbing.value !== 1) return;
@@ -190,41 +195,21 @@ export function LogoSwitch({
     onPress();
   };
 
-  // A drag begins: the stream appears and from now on follows the knob
-  const beginDrag = () => {
-    cancelAnimation(position);
-    const origin = down ? 1 : 0;
-    dragOrigin.value = origin;
+  // The parts of a drag that belong to React (the stream layer, the frame callback, the theme).
+  // Everything about positions and the clock is set on the UI thread in the gesture itself:
+  // from the JS thread such writes arrive late, and the very first one could be lost —
+  // the stream then started from where the previous run had ended.
+  const onDragStart = (origin: number) => {
     if (reduceMotion) return;
-    cancelAnimation(flowClock);
-    // Start the stream where the knob already is, not where a previous run left the clock
-    dragDistance.value = Math.abs(position.value - origin);
-    flowClock.value = flowAtDistance(dragDistance.value);
     startFlow(origin === 0 ? "down" : "up");
-    scrubbing.value = 1;
-    releasing.value = 0;
-    lastFrameAt.value = -1;
     scrub.setActive(true);
   };
 
-  // A drag ends. With the stream, the knob stays carried by it: switching, the stream plays to
-  // its end at its own speed and takes the knob to the far end; going back, it retreats and
-  // takes the knob home. However quick the swipe, the two arrive together.
-  const endDrag = (toDown: boolean) => {
-    const target = toDown ? 1 : 0;
-    const switching = target !== dragOrigin.value;
+  const onDragEnd = (switching: boolean, target: number, clockAtEnd: number) => {
     if (reduceMotion) {
-      scrubbing.value = 0;
       scrub.setActive(false);
-      position.value = withSpring(target, SETTLE_SPRING);
     } else {
-      releasing.value = switching ? 1 : -1;
-      dragDistance.value = switching ? 1 + OVERDRAG_TRAVELS : 0;
-      endFlowAfter(
-        switching
-          ? FLOW_DURATION_MS - flowClock.value
-          : flowClock.value / MAX_FLOW_RATE,
-      );
+      endFlowAfter(switching ? FLOW_DURATION_MS - clockAtEnd : clockAtEnd / MAX_FLOW_RATE);
     }
     if (switching) {
       ownTarget.current = target;
@@ -233,15 +218,25 @@ export function LogoSwitch({
   };
 
   const gesture = switchGesture({
-    position,
-    dragDistance,
+    shared: {
+      position,
+      pressed,
+      dragDistance,
+      dragOrigin,
+      flowClock,
+      scrubbing,
+      releasing,
+      lastFrameAt,
+      startFinger,
+      startPosition,
+      lastSide,
+    },
     carried: !reduceMotion,
-    dragOrigin,
-    pressed,
     travel,
     onTap: toggle,
-    beginDrag,
-    endDrag,
+    onDragStart,
+    onDragEnd,
+    tick,
   });
 
   // While pressed the knob grows toward the other end, as the iOS switch does
@@ -347,69 +342,98 @@ function flowAtDistance(distance: number): number {
   return SCRUB_MS + beyond * (FLOW_DURATION_MS - SCRUB_MS);
 }
 
+type SwitchShared = {
+  position: SharedValue<number>;
+  pressed: SharedValue<number>;
+  dragDistance: SharedValue<number>;
+  dragOrigin: SharedValue<number>;
+  flowClock: SharedValue<number>;
+  scrubbing: SharedValue<number>;
+  releasing: SharedValue<number>;
+  lastFrameAt: SharedValue<number>;
+  startFinger: SharedValue<number>;
+  startPosition: SharedValue<number>;
+  lastSide: SharedValue<number>;
+};
+
 /**
- * Tap or drag the knob, as on the iOS switch. Kept outside the component: the handlers run
- * on gestures, not during render.
+ * Tap or drag the knob, as on the iOS switch. The tap is handled in JS; the drag runs on the
+ * UI thread, so the knob and the stream answer the finger at once, and calls into React
+ * (`onDragStart`, `onDragEnd`, `tick`) only for what React owns.
  */
 function switchGesture({
-  position,
-  dragDistance,
+  shared,
   carried,
-  dragOrigin,
-  pressed,
   travel,
   onTap,
-  beginDrag,
-  endDrag,
+  onDragStart,
+  onDragEnd,
+  tick,
 }: {
-  position: SharedValue<number>;
-  dragDistance: SharedValue<number>;
+  shared: SwitchShared;
   /** The knob is carried by the stream (it follows dragDistance); otherwise it follows itself */
   carried: boolean;
-  dragOrigin: SharedValue<number>;
-  pressed: SharedValue<number>;
   travel: number;
   onTap: () => void;
-  beginDrag: () => void;
-  endDrag: (toDown: boolean) => void;
+  onDragStart: (origin: number) => void;
+  onDragEnd: (switching: boolean, target: number, clockAtEnd: number) => void;
+  tick: () => void;
 }) {
-  let dragFrom = 0;
-  let fingerFrom = 0;
-  let dragSide = false;
-
-  const press = () => {
-    pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
-  };
-  const release = () => {
-    pressed.value = withSpring(0, { damping: 18, stiffness: 200 });
-  };
+  const {
+    position,
+    pressed,
+    dragDistance,
+    dragOrigin,
+    flowClock,
+    scrubbing,
+    releasing,
+    lastFrameAt,
+    startFinger,
+    startPosition,
+    lastSide,
+  } = shared;
 
   const tap = Gesture.Tap()
     .runOnJS(true)
     .hitSlop(20)
-    .onBegin(press)
+    .onBegin(() => {
+      pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
+    })
     .onEnd((_e, success) => {
       if (!success) return;
       if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onTap();
     })
-    .onFinalize(release);
+    .onFinalize(() => {
+      pressed.value = withSpring(0, { damping: 18, stiffness: 200 });
+    });
 
   const drag = Gesture.Pan()
-    .runOnJS(true)
     .hitSlop(20)
     .minDistance(3)
     .onStart((e) => {
-      dragFrom = position.value;
-      // The finger already moved a little before the drag was recognized: start from here,
+      cancelAnimation(position);
+      cancelAnimation(flowClock);
+      // The drag starts from where the knob is, not from what the theme says
+      const origin = position.value > 0.5 ? 1 : 0;
+      dragOrigin.value = origin;
+      // The finger already moved a little before the drag was recognized: count from here,
       // so the knob doesn't jump by that much
-      fingerFrom = e.translationY;
-      dragSide = position.value > 0.5;
-      press();
-      beginDrag();
+      dragDistance.value = Math.abs(position.value - origin);
+      startFinger.value = e.translationY;
+      startPosition.value = position.value;
+      lastSide.value = origin;
+      pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
+      if (carried) {
+        flowClock.value = flowAtDistance(dragDistance.value);
+        releasing.value = 0;
+        lastFrameAt.value = -1;
+        scrubbing.value = 1;
+      }
+      runOnJS(onDragStart)(origin);
     })
     .onUpdate((e) => {
-      const raw = dragFrom + ((e.translationY - fingerFrom) * DRAG_GAIN) / travel;
+      const raw = startPosition.value + ((e.translationY - startFinger.value) * DRAG_GAIN) / travel;
       // Toward the far end the distance grows past the knob's travel; back past the start it stays 0
       const toward = dragOrigin.value === 0 ? raw : 1 - raw;
       dragDistance.value = Math.max(0, toward);
@@ -417,17 +441,30 @@ function switchGesture({
       // Without the stream (reduced motion) the knob follows the finger by itself
       const next = Math.min(1, Math.max(0, raw));
       position.value = withSpring(next, FOLLOW_SPRING);
-      if (next > 0.5 !== dragSide) {
-        dragSide = next > 0.5;
-        if (Platform.OS !== "web") Haptics.selectionAsync();
+      const side = next > 0.5 ? 1 : 0;
+      if (side !== lastSide.value) {
+        lastSide.value = side;
+        runOnJS(tick)();
       }
     })
     .onEnd((e) => {
       // Where the knob would get with its momentum: a flick carries it over, a slow drag doesn't
-      const fingerAt = dragFrom + ((e.translationY - fingerFrom) * DRAG_GAIN) / travel;
-      endDrag(fingerAt + (e.velocityY * DRAG_GAIN * 0.12) / travel > 0.5);
+      const fingerAt = startPosition.value + ((e.translationY - startFinger.value) * DRAG_GAIN) / travel;
+      const target = fingerAt + (e.velocityY * DRAG_GAIN * 0.12) / travel > 0.5 ? 1 : 0;
+      const switching = target !== dragOrigin.value;
+      if (carried) {
+        // The stream keeps carrying the knob: on to its end, or back home
+        releasing.value = switching ? 1 : -1;
+        dragDistance.value = switching ? 1 + OVERDRAG_TRAVELS : 0;
+      } else {
+        scrubbing.value = 0;
+        position.value = withSpring(target, SETTLE_SPRING);
+      }
+      runOnJS(onDragEnd)(switching, target, flowClock.value);
     })
-    .onFinalize(release);
+    .onFinalize(() => {
+      pressed.value = withSpring(0, { damping: 18, stiffness: 200 });
+    });
 
   return Gesture.Exclusive(drag, tap);
 }
