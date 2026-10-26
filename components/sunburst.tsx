@@ -67,8 +67,9 @@ export function Sunburst({
   const animatedStyle = useAnimatedStyle(() => {
     const b = bloom ? bloom.value : 0;
     return {
-      // Kept soft: a hint of warmth around the button, not a spotlight
-      opacity: 0.12 + breath.value * 0.05 + b * 0.16,
+      // Kept soft: a hint of warmth around the button, not a spotlight. The breathing swing
+      // stays wide, though: with a shallow one the rays look sluggish, as if slowed down
+      opacity: 0.07 + breath.value * 0.12 + b * 0.16,
       transform: [
         { rotate: `${spin.value * 360}deg` },
         { scale: 0.92 + breath.value * 0.08 + b * 0.3 },
