@@ -12,9 +12,10 @@ import Animated, {
   ZoomIn,
   interpolateColor,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
-  withDelay,
   withRepeat,
+  withSequence,
   withSpring,
   withTiming,
   type SharedValue,
@@ -23,6 +24,7 @@ import { useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { LogoSwitch } from "@/components/logo-switch";
+import { Sunburst } from "@/components/sunburst";
 import { ALL_BETTER_WORDS } from "@/constants/better-words";
 import { PALETTES, type Palette } from "@/constants/palette";
 import { addFeedback } from "@/lib/history";
@@ -37,14 +39,15 @@ import type { Practice, Rating } from "@/types/practice";
  */
 type Phase = "intro" | "feedback" | "thanks";
 
-// How long the reply stays before the home screen returns
-const THANKS_HOLD_MS = 2200;
+// How long the reply stays before the home screen returns (a tap returns at once)
+const THANKS_HOLD_MS = 2800;
 
 // The rating does affect the next offers (lib/practice-selector.ts), so the reply says so
 const RATINGS: {
   rating: Rating;
   emoji: string;
-  aura: string;
+  /** Sun rays around the button: only the positive rating has them */
+  rays?: string;
   label: string;
   reply: string;
   /** Ends the reply, in the brand color */
@@ -54,7 +57,6 @@ const RATINGS: {
   {
     rating: "bad",
     emoji: "😔",
-    aura: "#B794F4",
     label: "Плохо",
     reply: "Жаль, что не подошло",
     note: "В следующий раз предложим другое",
@@ -62,7 +64,6 @@ const RATINGS: {
   {
     rating: "neutral",
     emoji: "😐",
-    aura: "#90CDF4",
     label: "Нормально",
     reply: "Спасибо, что отметили",
     note: "Так подбор станет точнее",
@@ -70,13 +71,16 @@ const RATINGS: {
   {
     rating: "good",
     emoji: "😊",
-    aura: "#F6AD55",
+    rays: "#F6AD55",
     label: "Хорошо",
     reply: "Рады, что стало",
     accent: "Лучше",
     note: "Запомним, что вам подошло",
   },
 ];
+
+// The square the rays around the positive rating are drawn in
+const RAYS_SIZE = 124;
 
 function randomWord(except?: string): string {
   const pool = ALL_BETTER_WORDS.filter((w) => w !== except);
@@ -86,15 +90,86 @@ function randomWord(except?: string): string {
 // How long day turns to night (and back) after the logo switch
 const THEME_FADE_MS = 700;
 
-// Soft round spots over the gradient; their colors come from the palette
+// Soft round spots over the gradient; their colors come from the palette.
+// Each drifts slowly along its own loop: `drift` px, one loop per `period` ms.
 const BLOB_SPOTS = [
-  { size: 280, top: -60, left: -80 },
-  { size: 200, top: 120, right: -50 },
-  { size: 240, bottom: 80, left: -60 },
-  { size: 180, bottom: 40, right: -30 },
+  { size: 280, top: -60, left: -80, drift: 22, period: 17000 },
+  { size: 200, top: 120, right: -50, drift: 16, period: 13000 },
+  { size: 240, bottom: 80, left: -60, drift: 20, period: 19000 },
+  { size: 180, bottom: 40, right: -30, drift: 14, period: 15000 },
 ] as const;
 
-function Backdrop({ palette }: { palette: Palette }) {
+/**
+ * Loop phases of the spots (0 → 1, repeating), shared by the day and night backdrops so
+ * the spots of both move as one. Still when the system asks to reduce motion.
+ */
+function useBlobPhases(): SharedValue<number>[] {
+  const reduceMotion = useReducedMotion();
+  const phases = [useSharedValue(0), useSharedValue(0.25), useSharedValue(0.5), useSharedValue(0.75)];
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    phases.forEach((phase, index) => {
+      const start = phase.value;
+      // From its own starting point once around, then whole loops
+      phase.value = withSequence(
+        withTiming(1, { duration: BLOB_SPOTS[index].period * (1 - start), easing: Easing.linear }),
+        withRepeat(
+          withSequence(
+            withTiming(0, { duration: 0 }),
+            withTiming(1, { duration: BLOB_SPOTS[index].period, easing: Easing.linear }),
+          ),
+          -1,
+          false,
+        ),
+      );
+    });
+  }, [reduceMotion]);
+
+  return phases;
+}
+
+function BlobSpot({
+  index,
+  color,
+  phase,
+}: {
+  index: number;
+  color: string;
+  phase: SharedValue<number>;
+}) {
+  const { size, drift, period: _period, ...spot } = BLOB_SPOTS[index];
+
+  // An uneven loop (x twice as fast as y) and a slow swell, so the motion doesn't look mechanical
+  const style = useAnimatedStyle(() => {
+    const a = phase.value * Math.PI * 2;
+    return {
+      transform: [
+        { translateX: Math.sin(a * 2) * drift * 0.6 },
+        { translateY: Math.sin(a) * drift },
+        { scale: 1 + Math.sin(a + 1) * 0.05 },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          ...spot,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
+function Backdrop({ palette, phases }: { palette: Palette; phases: SharedValue<number>[] }) {
   return (
     <>
       <LinearGradient
@@ -103,18 +178,8 @@ function Backdrop({ palette }: { palette: Palette }) {
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {BLOB_SPOTS.map(({ size, ...spot }, index) => (
-        <View
-          key={index}
-          style={{
-            position: "absolute",
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: palette.blobs[index],
-            ...spot,
-          }}
-        />
+      {BLOB_SPOTS.map((_, index) => (
+        <BlobSpot key={index} index={index} color={palette.blobs[index]} phase={phases[index]} />
       ))}
     </>
   );
@@ -184,51 +249,30 @@ function BetterTitle({ night }: { night: SharedValue<number> }) {
 }
 
 /**
- * Emoji button with a soft aura: it breathes while waiting for a choice,
- * blooms when chosen; the others fade back. The positive one glows the most.
+ * Emoji button. The positive one has sun rays with a glow around it: they turn and breathe
+ * while waiting for a choice and open up when it is chosen. The others fade back then.
  */
 function EmojiChoice({
   emoji,
-  aura,
+  rays,
   label,
-  strong,
-  index,
   selected,
   dimmed,
   onPress,
 }: {
   emoji: string;
-  aura: string;
+  rays?: string;
   label: string;
-  strong: boolean;
-  index: number;
   selected: boolean;
   dimmed: boolean;
   onPress: () => void;
 }) {
   const palette = usePalette();
-  const breath = useSharedValue(0);
   const bloom = useSharedValue(0);
-
-  useEffect(() => {
-    breath.value = withDelay(
-      index * 400,
-      withRepeat(withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.ease) }), -1, true),
-    );
-  }, []);
 
   useEffect(() => {
     bloom.value = withSpring(selected ? 1 : 0, { damping: 12, stiffness: 120 });
   }, [selected]);
-
-  const auraStyle = useAnimatedStyle(() => {
-    const idleScale = 1 + breath.value * (strong ? 0.35 : 0.2);
-    const idleOpacity = (strong ? 0.3 : 0.18) + breath.value * 0.15;
-    return {
-      opacity: idleOpacity + bloom.value * (0.6 - idleOpacity),
-      transform: [{ scale: idleScale + bloom.value * (1.9 - idleScale) }],
-    };
-  });
 
   const emojiStyle = useAnimatedStyle(() => ({
     transform: [{ scale: 1 + bloom.value * 0.2 }],
@@ -247,12 +291,7 @@ function EmojiChoice({
         opacity: dimmed ? 0.35 : pressed ? 0.8 : 1,
       })}
     >
-      <Animated.View
-        style={[
-          { position: "absolute", width: 56, height: 56, borderRadius: 28, backgroundColor: aura },
-          auraStyle,
-        ]}
-      />
+      {rays && <Sunburst size={RAYS_SIZE} color={rays} bloom={bloom} />}
       <Animated.View
         style={[
           {
@@ -288,6 +327,11 @@ export default function HomeScreen() {
   const palette = usePalette();
   // 0 — day, 1 — night: the backdrop and the title follow it smoothly
   const night = useSharedValue(scheme === "dark" ? 1 : 0);
+
+  const blobPhases = useBlobPhases();
+
+  // The rays after a positive rating stay fully open
+  const thanksBloom = useSharedValue(1);
 
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.8);
@@ -374,6 +418,13 @@ export default function HomeScreen() {
     later(() => setPhase("intro"), 700 + THANKS_HOLD_MS);
   };
 
+  // The reply screen: a tap (on «Лучше» or anywhere) goes home without waiting
+  const handleThanksTap = () => {
+    timeouts.current.forEach(clearTimeout);
+    timeouts.current = [];
+    setPhase("intro");
+  };
+
   const handleSkip = () => {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPhase("intro");
@@ -384,9 +435,9 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1 }}>
       {/* Day backdrop, with the night one fading in over it */}
-      <Backdrop palette={PALETTES.light} />
+      <Backdrop palette={PALETTES.light} phases={blobPhases} />
       <Animated.View style={[StyleSheet.absoluteFill, nightLayerStyle]}>
-        <Backdrop palette={PALETTES.dark} />
+        <Backdrop palette={PALETTES.dark} phases={blobPhases} />
       </Animated.View>
 
       <SafeAreaView style={{ flex: 1 }}>
@@ -511,14 +562,12 @@ export default function HomeScreen() {
                   Как прошло?
                 </Text>
                 <View style={{ flexDirection: "row", gap: 20, marginBottom: 24 }}>
-                  {RATINGS.map((item, index) => (
+                  {RATINGS.map((item) => (
                     <EmojiChoice
                       key={item.rating}
                       emoji={item.emoji}
-                      aura={item.aura}
+                      rays={item.rays}
                       label={item.label}
-                      strong={item.rating === "good"}
-                      index={index}
                       selected={selected === item.rating}
                       dimmed={selected != null && selected !== item.rating}
                       onPress={() => handleRating(item.rating)}
@@ -536,58 +585,53 @@ export default function HomeScreen() {
             <Animated.View
               entering={FadeIn.duration(400)}
               exiting={FadeOutUp.duration(600)}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-                paddingHorizontal: 24,
-                gap: 12,
-              }}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              {/* The chosen emoji stays, so the reply reads as an answer to it */}
-              <Animated.View entering={ZoomIn.springify().damping(12)} style={{ marginBottom: 36 }}>
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -26,
-                    left: -26,
-                    width: 108,
-                    height: 108,
-                    borderRadius: 54,
-                    backgroundColor: reply.aura,
-                    opacity: 0.45,
-                  }}
-                />
-                <View
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: palette.bubble,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
+              <Pressable
+                onPress={handleThanksTap}
+                accessibilityRole="button"
+                accessibilityLabel={`${reply.reply}${reply.accent ? " " + reply.accent : ""}. На главный экран`}
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingHorizontal: 24,
+                  gap: 12,
+                }}
+              >
+                {/* The chosen emoji stays, so the reply reads as an answer to it */}
+                <Animated.View
+                  entering={ZoomIn.springify().damping(12)}
+                  style={{ marginBottom: 36, alignItems: "center", justifyContent: "center" }}
                 >
-                  <Text style={{ fontSize: 32 }}>{reply.emoji}</Text>
-                </View>
-              </Animated.View>
-              <Animated.Text
-                entering={FadeInDown.delay(150).duration(500)}
-                style={{ fontSize: 26, fontWeight: "700", color: palette.text, textAlign: "center" }}
-              >
-                {reply.reply}
-                {reply.accent && <Text style={{ color: palette.accent }}> {reply.accent}</Text>}
-              </Animated.Text>
-              <Animated.Text
-                entering={FadeInDown.delay(300).duration(500)}
-                style={{ fontSize: 15, color: palette.muted, textAlign: "center" }}
-              >
-                {reply.note}
-              </Animated.Text>
+                  {reply.rays && <Sunburst size={RAYS_SIZE * 1.3} color={reply.rays} bloom={thanksBloom} />}
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      backgroundColor: palette.bubble,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={{ fontSize: 32 }}>{reply.emoji}</Text>
+                  </View>
+                </Animated.View>
+                <Animated.Text
+                  entering={FadeInDown.delay(150).duration(500)}
+                  style={{ fontSize: 26, fontWeight: "700", color: palette.text, textAlign: "center" }}
+                >
+                  {reply.reply}
+                  {reply.accent && <Text style={{ color: palette.accent }}> {reply.accent}</Text>}
+                </Animated.Text>
+                <Animated.Text
+                  entering={FadeInDown.delay(300).duration(500)}
+                  style={{ fontSize: 15, color: palette.muted, textAlign: "center" }}
+                >
+                  {reply.note}
+                </Animated.Text>
+              </Pressable>
             </Animated.View>
           )}
         </View>
