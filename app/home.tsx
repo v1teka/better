@@ -21,13 +21,12 @@ import Animated, {
   type SharedValue,
 } from "react-native-reanimated";
 import { useEffect, useRef, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { LogoSwitch } from "@/components/logo-switch";
 import { Sunburst } from "@/components/sunburst";
 import { ALL_BETTER_WORDS } from "@/constants/better-words";
 import { PALETTES, type Palette } from "@/constants/palette";
-import { addFeedback } from "@/lib/history";
+import { addFeedback, takeFeedbackRequest } from "@/lib/history";
 import { getPracticeById } from "@/lib/practice-selector";
 import { toggleScheme, usePalette, useScheme } from "@/lib/theme-setting";
 import type { Practice, Rating } from "@/types/practice";
@@ -319,7 +318,8 @@ export default function HomeScreen() {
   // Development only: /home?preview=<practiceId> opens the rating card right away
   const { preview } = useLocalSearchParams<{ preview?: string }>();
   const [phase, setPhase] = useState<Phase | null>(null);
-  const [practice, setPractice] = useState<Practice | null>(null);
+  // What was just done: one practice, or the practices of a series (rated together)
+  const [practices, setPractices] = useState<Practice[]>([]);
   const [selected, setSelected] = useState<Rating | null>(null);
   const timeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -370,21 +370,16 @@ export default function HomeScreen() {
 
   const checkFeedbackFlag = async () => {
     if (__DEV__ && preview) {
-      setPractice(getPracticeById(preview) ?? null);
+      // /home?preview=<id>[,<id>…]: several ids preview the rating after a series
+      setPractices(preview.split(",").map((id) => getPracticeById(id)).filter((p): p is Practice => !!p));
       setPhase("feedback");
       return;
     }
-    try {
-      const showFeedback = await AsyncStorage.getItem("showFeedback");
-      if (showFeedback === "true") {
-        await AsyncStorage.removeItem("showFeedback");
-        const practiceId = await AsyncStorage.getItem("practiceId");
-        setPractice(practiceId ? getPracticeById(practiceId) ?? null : null);
-        setPhase("feedback");
-        return;
-      }
-    } catch (error) {
-      console.error("Error checking feedback flag:", error);
+    const ids = await takeFeedbackRequest();
+    if (ids) {
+      setPractices(ids.map((id) => getPracticeById(id)).filter((p): p is Practice => !!p));
+      setPhase("feedback");
+      return;
     }
     setPhase("intro");
   };
@@ -409,7 +404,7 @@ export default function HomeScreen() {
     if (selected) return;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected(rating);
-    if (practice) addFeedback(practice.id, rating);
+    if (practices.length > 0) addFeedback(practices.map((p) => p.id), rating);
     // Let the aura bloom, then the card drifts up and the closing word comes in
     later(() => {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -544,18 +539,19 @@ export default function HomeScreen() {
                     marginBottom: 8,
                   }}
                 >
-                  Практика завершена
+                  {practices.length > 1 ? "Серия завершена" : "Практика завершена"}
                 </Text>
-                {practice && (
+                {practices.length > 0 && (
                   <Text
                     style={{
-                      fontSize: 15,
+                      fontSize: practices.length > 1 ? 14 : 15,
+                      lineHeight: practices.length > 1 ? 20 : undefined,
                       color: palette.muted,
                       textAlign: "center",
                       marginBottom: 16,
                     }}
                   >
-                    {practice.title}
+                    {practices.map((p) => p.title).join(practices.length > 1 ? "\n" : "")}
                   </Text>
                 )}
                 <Text style={{ fontSize: 22, fontWeight: "600", color: palette.text, marginBottom: 24 }}>

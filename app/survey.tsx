@@ -5,14 +5,17 @@ import * as Haptics from "expo-haptics";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { usePalette } from "@/lib/theme-setting";
-import type { UserState } from "@/types/practice";
+import type { TimeChoice, UserState } from "@/types/practice";
+
+/** The survey's answers: the duration can also be a series of practices */
+type Answers = Omit<UserState, "time"> & { time: TimeChoice | null };
 
 type Option<T> = { value: T; label: string };
 
 const QUESTIONS: {
-  key: keyof UserState;
+  key: keyof Answers;
   title: string;
-  options: Option<UserState[keyof UserState]>[];
+  options: Option<Answers[keyof Answers]>[];
 }[] = [
   {
     key: "energy",
@@ -47,6 +50,8 @@ const QUESTIONS: {
       { value: 2, label: "1–2 мин" },
       { value: 5, label: "3–5 мин" },
       { value: 10, label: "10 мин" },
+      // For those with more time: three practices in a row, about 15 minutes (lib/series.ts)
+      { value: "series", label: "Серия" },
     ],
   },
 ];
@@ -59,7 +64,7 @@ const QUESTIONS: {
 export default function SurveyScreen() {
   const router = useRouter();
   const palette = usePalette();
-  const [state, setState] = useState<UserState>({
+  const [state, setState] = useState<Answers>({
     energy: null,
     focus: null,
     tension: null,
@@ -77,7 +82,7 @@ export default function SurveyScreen() {
     router.replace("/home");
   };
 
-  const handleSelect = (key: keyof UserState, value: UserState[keyof UserState]) => {
+  const handleSelect = (key: keyof Answers, value: Answers[keyof Answers]) => {
     triggerLight();
     setState((s) => ({ ...s, [key]: s[key] === value ? null : value }));
   };
@@ -127,7 +132,7 @@ export default function SurveyScreen() {
           {QUESTIONS.map((question) => (
             <View key={question.key} style={{ gap: 12 }}>
               <Text style={{ fontSize: 18, fontWeight: "600", color: palette.text }}>{question.title}</Text>
-              <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flexDirection: "row", gap: question.options.length > 3 ? 8 : 12 }}>
                 {question.options.map((option) => {
                   const selected = state[question.key] === option.value;
                   return (
@@ -139,14 +144,21 @@ export default function SurveyScreen() {
                       style={({ pressed }) => ({
                         flex: 1,
                         paddingVertical: 14,
-                        paddingHorizontal: 8,
+                        paddingHorizontal: question.options.length > 3 ? 4 : 8,
                         borderRadius: 12,
                         backgroundColor: selected ? palette.button : palette.option,
                         opacity: pressed ? 0.7 : 1,
                         alignItems: "center",
                       })}
                     >
-                      <Text style={{ fontSize: 16, fontWeight: "500", color: selected ? palette.onButton : palette.text }}>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontSize: question.options.length > 3 ? 15 : 16,
+                          fontWeight: "500",
+                          color: selected ? palette.onButton : palette.text,
+                        }}
+                      >
                         {option.label}
                       </Text>
                     </Pressable>
@@ -162,7 +174,9 @@ export default function SurveyScreen() {
           {/* Continue Button: always available, the hint explains what answers give */}
           <View style={{ gap: 10 }}>
             <Text style={{ fontSize: 13, color: palette.subtle, textAlign: "center" }}>
-              {answered === 0
+              {state.time === "series"
+                ? "Соберём серию из трёх практик — около 15 минут"
+                : answered === 0
                 ? "Без ответов подберём то, что подходит почти всегда"
                 : answered < 4
                   ? "Чем больше ответов, тем точнее подбор"

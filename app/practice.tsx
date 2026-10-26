@@ -2,7 +2,6 @@ import { View, Text, ScrollView, Pressable, Platform } from "react-native";
 import { Redirect, useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
@@ -12,9 +11,12 @@ import type { Practice } from "@/types/practice";
 import { MarkdownText } from "@/components/markdown-text";
 import { CollapsibleCard, GlassCard } from "@/components/glass-card";
 import { HintLabel } from "@/components/hint-label";
+import { SeriesProgress } from "@/components/series-progress";
 import { SoundToggle } from "@/components/sound-toggle";
+import { requestFeedback } from "@/lib/history";
 import { getPracticeById } from "@/lib/practice-selector";
 import { usePracticeTimer } from "@/lib/practice-timer";
+import { decodeSeries } from "@/lib/series";
 import { useSoundOn } from "@/lib/sound-setting";
 import { usePalette } from "@/lib/theme-setting";
 
@@ -25,17 +27,45 @@ const gongSound = require("@/assets/sounds/gong.mp3");
  * Timer with a gong at the end, the practice steps, the less important parts folded.
  */
 export default function PracticeScreen() {
-  const params = useLocalSearchParams<{ practiceId?: string; selectedTime?: string }>();
-  const practice = getPracticeById(params.practiceId ?? "");
-  const minutes = parseInt(params.selectedTime ?? "", 10);
+  const params = useLocalSearchParams<{
+    practiceId?: string;
+    selectedTime?: string;
+    series?: string;
+    durations?: string;
+    step?: string;
+  }>();
+
+  // A step of a series, or a single practice
+  const { ids, minutes: seriesMinutesList } = decodeSeries(params.series, params.durations);
+  const step = Math.min(Math.max(parseInt(params.step ?? "0", 10) || 0, 0), Math.max(ids.length - 1, 0));
+  const inSeries = ids.length > 0;
+  const practice = getPracticeById(inSeries ? ids[step] : params.practiceId ?? "");
+  const minutes = inSeries ? seriesMinutesList[step] : parseInt(params.selectedTime ?? "", 10);
   const duration = isNaN(minutes) || minutes <= 0 ? practice?.time[0] ?? 0 : minutes;
 
   // A broken link (unknown practice) leads home instead of crashing
   if (!practice) return <Redirect href="/home" />;
-  return <PracticeView practice={practice} totalSeconds={duration * 60} />;
+  return (
+    <PracticeView
+      practice={practice}
+      totalSeconds={duration * 60}
+      series={inSeries ? { ids, step, series: params.series!, durations: params.durations! } : null}
+    />
+  );
 }
 
-function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSeconds: number }) {
+type SeriesPosition = { ids: string[]; step: number; series: string; durations: string };
+
+function PracticeView({
+  practice,
+  totalSeconds,
+  series,
+}: {
+  practice: Practice;
+  totalSeconds: number;
+  series: SeriesPosition | null;
+}) {
+  const lastInSeries = series != null && series.step === series.ids.length - 1;
   const palette = usePalette();
   const isCompletingRef = useRef(false);
   const soundOn = useSoundOn();
@@ -82,10 +112,16 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
     isCompletingRef.current = true;
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     stop();
-    try {
-      await AsyncStorage.setItem("showFeedback", "true");
-      await AsyncStorage.setItem("practiceId", practice.id ?? "");
-    } catch (_) {}
+    if (series && !lastInSeries) {
+      // A short pause before the next practice of the series
+      router.replace({
+        pathname: "/series-break",
+        params: { series: series.series, durations: series.durations, step: String(series.step + 1) },
+      });
+      return;
+    }
+    // One rating for the whole series, or for the single practice
+    await requestFeedback(series ? series.ids : [practice.id]);
     router.replace("/home");
   };
 
@@ -137,9 +173,16 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
       >
         {/* Header */}
         <View className="items-center mb-6" style={{ gap: 10 }}>
+          {series && <SeriesProgress step={series.step} total={series.ids.length} />}
           <HintLabel
             label="Сейчас выполняете"
-            hint="Следуйте шагам ниже, пока идёт таймер. Когда время выйдет, прозвучит гонг — даже на заблокированном экране. Закончили раньше — нажмите «Завершить»."
+            hint={
+              !series
+                ? "Следуйте шагам ниже, пока идёт таймер. Когда время выйдет, прозвучит гонг — даже на заблокированном экране. Закончили раньше — нажмите «Завершить»."
+                : lastInSeries
+                  ? "Последняя практика серии. Следуйте шагам, пока идёт таймер; когда время выйдет, прозвучит гонг. Нажмите «Завершить серию» — и отметите, как всё прошло."
+                  : `Практика ${series.step + 1} из ${series.ids.length} в серии. Следуйте шагам, пока идёт таймер; когда время выйдет, прозвучит гонг. Нажмите «Завершить» — и перейдёте к следующей.`
+            }
           />
           <Text className="text-[28px] font-bold text-center leading-tight" style={{ color: palette.text }}>
             {practice.title}
@@ -262,7 +305,7 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
           })}
         >
           <Text style={{ fontSize: 18, fontWeight: "600", color: palette.onButton }}>
-            Завершить
+            {lastInSeries ? "Завершить серию" : "Завершить"}
           </Text>
         </Pressable>
       </ScrollView>

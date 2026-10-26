@@ -128,6 +128,24 @@ function shuffle<T>(items: T[], random: () => number): T[] {
 }
 
 /**
+ * Pick one of suitable `candidates`: the best-scored few for these answers and history,
+ * a random one among them, so offers vary
+ */
+export function pickFrom(
+  candidates: Practice[],
+  state: UserState,
+  history: SelectionHistory,
+  random: () => number,
+): Practice {
+  // Shuffle first, so equal scores are ordered randomly by the stable sort
+  const ranked = shuffle(candidates, random).sort(
+    (a, b) => score(b, state, history) - score(a, state, history),
+  );
+  const top = ranked.slice(0, TOP_CANDIDATES);
+  return top[Math.floor(random() * top.length)];
+}
+
+/**
  * Pick a practice for the answers. If nothing fits, the least important answers
  * are relaxed one by one (focus, then tension, then energy), time is kept.
  */
@@ -145,14 +163,7 @@ export function pickPractice(
 
   for (const relaxed of relaxations) {
     const candidates = practices.filter((p) => suits(p, relaxed));
-    if (candidates.length === 0) continue;
-
-    // Shuffle first, so equal scores are ordered randomly by the stable sort
-    const ranked = shuffle(candidates, random).sort(
-      (a, b) => score(b, relaxed, history) - score(a, relaxed, history),
-    );
-    const top = ranked.slice(0, TOP_CANDIDATES);
-    return top[Math.floor(random() * top.length)];
+    if (candidates.length > 0) return pickFrom(candidates, relaxed, history, random);
   }
 
   const fallbacks = FALLBACK_PRACTICES.filter((p) => suits(p, { ...state, focus: null, tension: null, energy: null }));

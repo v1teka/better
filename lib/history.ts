@@ -35,10 +35,15 @@ export async function getFeedbackHistory(): Promise<FeedbackEntry[]> {
   return readList<FeedbackEntry>(FEEDBACK_KEY);
 }
 
-export async function addFeedback(practiceId: string, rating: Rating): Promise<void> {
+/**
+ * One rating for one or several practices (a series is rated as a whole). Written in one go:
+ * separate concurrent writes would each read the old list and only the last would survive.
+ */
+export async function addFeedback(practiceIds: string[], rating: Rating): Promise<void> {
   try {
     const history = await getFeedbackHistory();
-    history.push({ practiceId, rating, at: new Date().toISOString() });
+    const at = new Date().toISOString();
+    practiceIds.forEach((practiceId) => history.push({ practiceId, rating, at }));
     await AsyncStorage.setItem(FEEDBACK_KEY, JSON.stringify(history.slice(-MAX_FEEDBACK)));
   } catch {}
 }
@@ -60,4 +65,37 @@ export async function getSelectionHistory(): Promise<SelectionHistory> {
   const ratings: SelectionHistory["ratings"] = {};
   for (const entry of feedback) ratings[entry.practiceId] = entry.rating;
   return { recent, ratings };
+}
+
+const SHOW_FEEDBACK_KEY = "showFeedback";
+const FEEDBACK_IDS_KEY = "practiceIds";
+// Kept for the rating flow of the versions before series: the single practice id
+const LEGACY_FEEDBACK_ID_KEY = "practiceId";
+
+/** After a practice (or a series): the home screen asks how it went */
+export async function requestFeedback(practiceIds: string[]): Promise<void> {
+  try {
+    await AsyncStorage.multiSet([
+      [SHOW_FEEDBACK_KEY, "true"],
+      [FEEDBACK_IDS_KEY, practiceIds.join(",")],
+      [LEGACY_FEEDBACK_ID_KEY, practiceIds[practiceIds.length - 1] ?? ""],
+    ]);
+  } catch {}
+}
+
+/** The practices to rate, if a rating is due; asking once clears the request */
+export async function takeFeedbackRequest(): Promise<string[] | null> {
+  try {
+    const [[, show], [, ids], [, legacyId]] = await AsyncStorage.multiGet([
+      SHOW_FEEDBACK_KEY,
+      FEEDBACK_IDS_KEY,
+      LEGACY_FEEDBACK_ID_KEY,
+    ]);
+    if (show !== "true") return null;
+    await AsyncStorage.removeItem(SHOW_FEEDBACK_KEY);
+    const list = (ids ?? "").split(",").filter(Boolean);
+    return list.length > 0 ? list : legacyId ? [legacyId] : [];
+  } catch {
+    return null;
+  }
 }

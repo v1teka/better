@@ -9,6 +9,10 @@ export type Tension = "calm" | "tense";
 export type Time = 1 | 2 | 3 | 5 | 10;
 /** Answer to "how much time do you have": 2 → 1–2 min, 5 → 3–5 min, 10 → 10 min */
 export type SurveyTime = 2 | 5 | 10;
+/** The duration question also offers a series of practices for those with more time */
+export type TimeChoice = SurveyTime | "series";
+/** Where a short practice fits in a series: the way in or the way out */
+export type SeriesRole = "opening" | "closing";
 export type Intensity = "soft" | "medium" | "hard";
 export type Category = "recovery" | "activation" | "focus" | "body" | "creative" | "sensory";
 export type Rating = "bad" | "neutral" | "good";
@@ -29,6 +33,8 @@ export interface Practice {
   focus: Focus[];
   tension: Tension[];
   intensity: Intensity;
+  /** Can open or close a series (lib/series.ts); any long enough practice can be its main one */
+  roles?: SeriesRole[];
 }
 
 /** Survey answers; every question is optional */

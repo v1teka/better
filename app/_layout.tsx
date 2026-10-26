@@ -27,6 +27,7 @@ export default function RootLayout() {
             <Stack.Screen name="survey" />
             <Stack.Screen name="recommendation" />
             <Stack.Screen name="practice" />
+            <Stack.Screen name="series-break" />
           </Stack>
           <StatusBar style={palette.statusBar} />
         </GestureHandlerRootView>
