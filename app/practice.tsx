@@ -6,6 +6,13 @@ import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 
 import type { Practice } from "@/types/practice";
 import { MarkdownText } from "@/components/markdown-text";
@@ -125,6 +132,16 @@ function PracticeView({
     router.replace("/home");
   };
 
+  // Paused (not finished): the time blinks slowly until the timer goes on
+  const paused = !isRunning && !isDone;
+  const pausedPulse = useSharedValue(1);
+  useEffect(() => {
+    pausedPulse.value = paused
+      ? withRepeat(withTiming(0.35, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true)
+      : withTiming(1, { duration: 200 });
+  }, [paused]);
+  const pausedPulseStyle = useAnimatedStyle(() => ({ opacity: pausedPulse.value }));
+
   // Format time as MM:SS
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -230,7 +247,7 @@ function PracticeView({
                 cx={54}
                 cy={54}
                 r={RADIUS}
-                stroke={isDone ? palette.success : palette.accent}
+                stroke={isDone ? palette.success : paused ? palette.muted : palette.accent}
                 strokeWidth={6}
                 fill="none"
                 strokeDasharray={`${CIRCUMFERENCE}`}
@@ -238,19 +255,19 @@ function PracticeView({
                 strokeLinecap="round"
               />
             </Svg>
-            {/* Time text */}
-            <View style={{ alignItems: "center" }}>
+            {/* Time text; on pause it blinks slowly and the ring turns grey */}
+            <Animated.View style={[{ alignItems: "center" }, pausedPulseStyle]}>
               <Text
                 style={{
                   fontSize: isDone ? 18 : 26,
                   fontWeight: "700",
-                  color: isDone ? palette.success : palette.text,
+                  color: isDone ? palette.success : paused ? palette.muted : palette.text,
                   letterSpacing: isDone ? 0 : 1,
                 }}
               >
                 {isDone ? "Готово" : formatTime(secondsLeft)}
               </Text>
-            </View>
+            </Animated.View>
           </Pressable>
 
           {/* Pause / Resume button below the ring */}
