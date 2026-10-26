@@ -107,7 +107,7 @@ export function decodeSeries(series?: string, durations?: string): { ids: string
 }
 
 export const SERIES_ROLE_LABELS: Record<SeriesStepRole, string> = {
-  opening: "Вход",
+  opening: "Вступительная",
   main: "Основная",
-  closing: "Выход",
+  closing: "Завершающая",
 };
