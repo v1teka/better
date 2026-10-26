@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Platform, Pressable, Text, View, type ViewProps } from "react-native";
-import Animated, { FadeIn, useAnimatedStyle, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 
+import { FOLD, UNFOLD } from "@/constants/motion";
 import type { Palette } from "@/constants/palette";
 import { usePalette } from "@/lib/theme-setting";
 
@@ -52,13 +53,28 @@ export function CollapsibleCard({
 }) {
   const palette = usePalette();
   const [open, setOpen] = useState(false);
+  // 0 — folded, 1 — unfolded; the content's natural height is measured once it lays out
+  const progress = useSharedValue(0);
+  const contentHeight = useSharedValue(0);
 
   useEffect(() => {
     if (openWhen) setOpen(true);
   }, [openWhen]);
 
+  // Opened by hand or by `openWhen`, it unfolds the same way the hints do
+  useEffect(() => {
+    progress.value = withTiming(open ? 1 : 0, open ? UNFOLD : FOLD);
+  }, [open]);
+
   const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: withTiming(open ? "180deg" : "0deg", { duration: 200 }) }],
+    transform: [{ rotate: `${progress.value * 180}deg` }],
+  }));
+
+  const contentStyle = useAnimatedStyle(() => ({
+    height: contentHeight.value * progress.value,
+    opacity: progress.value,
+    // Takes back the room left under the card for its shadow, only as much as it is open
+    marginBottom: -10 * progress.value,
   }));
 
   const toggle = () => {
@@ -88,11 +104,22 @@ export function CollapsibleCard({
           <Ionicons name="chevron-down" size={18} color={palette.muted} />
         </Animated.View>
       </Pressable>
-      {open && (
-        <Animated.View entering={FadeIn.duration(250)} style={[cardStyle(palette), { marginTop: 8 }]}>
-          {children}
-        </Animated.View>
-      )}
+      {/* Height and opacity are animated, so what is below moves smoothly. The clip box is
+          10 px wider on each side and lower, so the card's shadow isn't cut off */}
+      <Animated.View
+        style={[{ overflow: "hidden", marginHorizontal: -10 }, contentStyle]}
+      >
+        <View
+          onLayout={(e) => {
+            contentHeight.value = e.nativeEvent.layout.height;
+          }}
+          style={{ position: "absolute", left: 0, right: 0, paddingTop: 8, paddingHorizontal: 10, paddingBottom: 10 }}
+          accessibilityElementsHidden={!open}
+          importantForAccessibility={open ? "auto" : "no-hide-descendants"}
+        >
+          <View style={cardStyle(palette)}>{children}</View>
+        </View>
+      </Animated.View>
     </View>
   );
 }

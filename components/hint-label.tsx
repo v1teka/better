@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
+import { FOLD, UNFOLD } from "@/constants/motion";
 import { usePalette } from "@/lib/theme-setting";
 
 /**
@@ -26,10 +26,7 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
     if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const next = !open;
     setOpen(next);
-    progress.value = withTiming(next ? 1 : 0, {
-      duration: next ? 360 : 180,
-      easing: next ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
-    });
+    progress.value = withTiming(next ? 1 : 0, next ? UNFOLD : FOLD);
   };
 
   const hintStyle = useAnimatedStyle(() => ({
