@@ -27,7 +27,7 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
     const next = !open;
     setOpen(next);
     progress.value = withTiming(next ? 1 : 0, {
-      duration: next ? 240 : 180,
+      duration: next ? 360 : 180,
       easing: next ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
     });
   };
