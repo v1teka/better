@@ -33,6 +33,12 @@ const FOLLOW_SPRING = { damping: 26, stiffness: 260, mass: 0.7 };
 const DRAG_GAIN = 0.65;
 // The part of the flow the knob carries while dragged: gathering and passing through the body
 const SCRUB_MS = FLOW_GATHER_MS + FLOW_PASS_MS;
+// Past the end of the knob's travel the finger keeps playing the rest of the flow:
+// one more knob travel of finger movement plays it to the end
+const OVERDRAG_TRAVELS = 1;
+// On a tap the flow starts with the arrows already gathered over the crown, so the knob
+// and the stream move almost at once
+const TAP_LEAD_MS = FLOW_GATHER_MS - 40;
 
 /**
  * The logo: an iOS-style switch standing upright. The light-blue top and the dark-blue
@@ -92,12 +98,14 @@ export function LogoSwitch({
     position.value = withSpring(target, SETTLE_SPRING);
   }, [down, position]);
 
+  // How far the finger has taken the knob from where it started, in knob travels; past 1 the
+  // knob rests against the end, but the stream keeps going with the finger
+  const dragDistance = useSharedValue(0);
+
   useAnimatedReaction(
-    () => position.value,
-    (pos) => {
-      if (scrubbing.value === 1) {
-        flowClock.value = Math.min(1, Math.abs(pos - dragOrigin.value)) * SCRUB_MS;
-      }
+    () => dragDistance.value,
+    (distance) => {
+      if (scrubbing.value === 1) flowClock.value = flowAtDistance(distance);
     },
   );
 
@@ -122,10 +130,10 @@ export function LogoSwitch({
       position.value = withSpring(target, SETTLE_SPRING);
     } else {
       startFlow(target === 1 ? "down" : "up");
-      runFlow(flowClock);
-      endFlowAfter(FLOW_DURATION_MS);
+      runFlow(flowClock, TAP_LEAD_MS);
+      endFlowAfter(FLOW_DURATION_MS - TAP_LEAD_MS);
       position.value = withDelay(
-        FLOW_GATHER_MS,
+        FLOW_GATHER_MS - TAP_LEAD_MS,
         withTiming(target, { duration: FLOW_PASS_MS, easing: Easing.inOut(Easing.cubic) }),
       );
     }
@@ -140,7 +148,8 @@ export function LogoSwitch({
     if (reduceMotion) return;
     cancelAnimation(flowClock);
     // Start the stream where the knob already is, not where a previous run left the clock
-    flowClock.value = Math.min(1, Math.abs(position.value - origin)) * SCRUB_MS;
+    dragDistance.value = Math.abs(position.value - origin);
+    flowClock.value = flowAtDistance(dragDistance.value);
     startFlow(origin === 0 ? "down" : "up");
     scrubbing.value = 1;
   };
@@ -165,7 +174,16 @@ export function LogoSwitch({
     }
   };
 
-  const gesture = switchGesture({ position, pressed, travel, onTap: toggle, beginDrag, endDrag });
+  const gesture = switchGesture({
+    position,
+    dragDistance,
+    dragOrigin,
+    pressed,
+    travel,
+    onTap: toggle,
+    beginDrag,
+    endDrag,
+  });
 
   // While pressed the knob grows toward the other end, as the iOS switch does
   const knobStyle = useAnimatedStyle(() => {
@@ -262,12 +280,22 @@ export function LogoSwitch({
   );
 }
 
+/** The flow clock for a drag distance (in knob travels): gather and pass, then the rest */
+function flowAtDistance(distance: number): number {
+  "worklet";
+  if (distance <= 1) return distance * SCRUB_MS;
+  const beyond = Math.min(1, (distance - 1) / OVERDRAG_TRAVELS);
+  return SCRUB_MS + beyond * (FLOW_DURATION_MS - SCRUB_MS);
+}
+
 /**
  * Tap or drag the knob, as on the iOS switch. Kept outside the component: the handlers run
  * on gestures, not during render.
  */
 function switchGesture({
   position,
+  dragDistance,
+  dragOrigin,
   pressed,
   travel,
   onTap,
@@ -275,6 +303,8 @@ function switchGesture({
   endDrag,
 }: {
   position: SharedValue<number>;
+  dragDistance: SharedValue<number>;
+  dragOrigin: SharedValue<number>;
   pressed: SharedValue<number>;
   travel: number;
   onTap: () => void;
@@ -317,8 +347,12 @@ function switchGesture({
       beginDrag();
     })
     .onUpdate((e) => {
-      const next = Math.min(1, Math.max(0, dragFrom + ((e.translationY - fingerFrom) * DRAG_GAIN) / travel));
+      const raw = dragFrom + ((e.translationY - fingerFrom) * DRAG_GAIN) / travel;
+      const next = Math.min(1, Math.max(0, raw));
       position.value = withSpring(next, FOLLOW_SPRING);
+      // Toward the far end the distance grows past the knob's travel; back past the start it stays 0
+      const toward = dragOrigin.value === 0 ? raw : 1 - raw;
+      dragDistance.value = withSpring(Math.max(0, toward), FOLLOW_SPRING);
       // A tick when the knob crosses the horizon
       if (next > 0.5 !== dragSide) {
         dragSide = next > 0.5;

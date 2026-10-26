@@ -199,11 +199,11 @@ function buildStrand(spec: StrandSpec, bodyHeight: number): Strand {
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-/** Restart the flow clock: 0 → FLOW_DURATION_MS in real time */
-export function runFlow(clock: SharedValue<number>): void {
+/** Restart the flow clock: `from` → FLOW_DURATION_MS in real time */
+export function runFlow(clock: SharedValue<number>, from = 0): void {
   clock.value = withSequence(
-    withTiming(0, { duration: 0 }),
-    withTiming(FLOW_DURATION_MS, { duration: FLOW_DURATION_MS, easing: Easing.linear }),
+    withTiming(from, { duration: 0 }),
+    withTiming(FLOW_DURATION_MS, { duration: FLOW_DURATION_MS - from, easing: Easing.linear }),
   );
 }
 
