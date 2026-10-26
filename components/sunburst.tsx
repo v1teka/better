@@ -67,7 +67,8 @@ export function Sunburst({
   const animatedStyle = useAnimatedStyle(() => {
     const b = bloom ? bloom.value : 0;
     return {
-      opacity: 0.7 + breath.value * 0.15 + b * 0.15,
+      // Kept soft: a hint of warmth around the button, not a spotlight
+      opacity: 0.35 + breath.value * 0.1 + b * 0.3,
       transform: [
         { rotate: `${spin.value * 360}deg` },
         { scale: 0.92 + breath.value * 0.08 + b * 0.3 },
