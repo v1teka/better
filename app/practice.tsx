@@ -6,13 +6,6 @@ import { useEffect, useRef } from "react";
 import Svg, { Circle } from "react-native-svg";
 import { useAudioPlayer, setAudioModeAsync } from "expo-audio";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
 
 import type { Practice } from "@/types/practice";
 import { MarkdownText } from "@/components/markdown-text";
@@ -132,15 +125,8 @@ function PracticeView({
     router.replace("/home");
   };
 
-  // Paused (not finished): the time blinks slowly until the timer goes on
+  // Paused (not finished): the timer fades back until it goes on
   const paused = !isRunning && !isDone;
-  const pausedPulse = useSharedValue(1);
-  useEffect(() => {
-    pausedPulse.value = paused
-      ? withRepeat(withTiming(0.35, { duration: 900, easing: Easing.inOut(Easing.sin) }), -1, true)
-      : withTiming(1, { duration: 200 });
-  }, [paused]);
-  const pausedPulseStyle = useAnimatedStyle(() => ({ opacity: pausedPulse.value }));
 
   // Format time as MM:SS
   const formatTime = (secs: number) => {
@@ -223,7 +209,7 @@ function PracticeView({
               height: 108,
               alignItems: "center",
               justifyContent: "center",
-              opacity: pressed ? 0.75 : 1,
+              opacity: (pressed ? 0.75 : 1) * (paused ? 0.45 : 1),
             })}
           >
             {/* Background circle */}
@@ -255,8 +241,8 @@ function PracticeView({
                 strokeLinecap="round"
               />
             </Svg>
-            {/* Time text; on pause it blinks slowly and the ring turns grey */}
-            <Animated.View style={[{ alignItems: "center" }, pausedPulseStyle]}>
+            {/* Time text; on pause the ring turns grey and the timer fades back */}
+            <View style={{ alignItems: "center" }}>
               <Text
                 style={{
                   fontSize: isDone ? 18 : 26,
@@ -267,7 +253,7 @@ function PracticeView({
               >
                 {isDone ? "Готово" : formatTime(secondsLeft)}
               </Text>
-            </Animated.View>
+            </View>
           </Pressable>
 
           {/* Pause / Resume button below the ring */}
