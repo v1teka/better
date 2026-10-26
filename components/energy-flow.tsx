@@ -70,7 +70,7 @@ const STRAND_SPECS: StrandSpec[] = [
 
 type Arrow = {
   strand: number;
-  /** ms from the tap */
+  /** ms from the start of the flow */
   delay: number;
   duration: number;
   /** px */
@@ -101,6 +101,18 @@ const ARROWS: Arrow[] = [
 ];
 
 export const FLOW_DURATION_MS = Math.max(...ARROWS.map((a) => a.delay + a.duration));
+
+/**
+ * Each arrow's way in three phases, as shares of its duration: gathering over the crown,
+ * passing through the body, leaving it and dissolving. The switch knob glides while the
+ * leading arrow (the first one, no delay) passes through the body, so they move as one.
+ */
+const GATHER_SHARE = 0.15;
+const PASS_SHARE = 0.35;
+
+/** When the leading arrow reaches the body, and how long it takes to pass it */
+export const FLOW_GATHER_MS = ARROWS[0].delay + GATHER_SHARE * ARROWS[0].duration;
+export const FLOW_PASS_MS = PASS_SHARE * ARROWS[0].duration;
 
 /** A strand as a polyline with arc lengths, in the "down" orientation, centered on the body */
 type Strand = {
@@ -195,9 +207,36 @@ export function runFlow(clock: SharedValue<number>): void {
   );
 }
 
-function easeInOut(t: number): number {
+/**
+ * Where an arrow's head is (arc length) over time: a smooth monotone curve through the
+ * phase points (start, enters the body, leaves it, end), at rest at both ends.
+ */
+type Timing = { ts: number[]; ss: number[]; ms: number[] };
+
+function arrowTiming(arrow: Arrow, strand: Strand): Timing {
+  const ts = [0, GATHER_SHARE * arrow.duration, (GATHER_SHARE + PASS_SHARE) * arrow.duration, arrow.duration];
+  const ss = [0, strand.centerFrom, strand.centerTo, strand.length];
+  const slopes = [0, 1, 2].map((k) => (ss[k + 1] - ss[k]) / (ts[k + 1] - ts[k]));
+  // Fritsch–Carlson: harmonic mean of the neighbouring slopes keeps the curve monotone
+  const inner = (a: number, b: number) => (a > 0 && b > 0 ? (2 * a * b) / (a + b) : 0);
+  const ms = [0, inner(slopes[0], slopes[1]), inner(slopes[1], slopes[2]), 0];
+  return { ts, ss, ms };
+}
+
+function headAt(timing: Timing, t: number): number {
   "worklet";
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const { ts, ss, ms } = timing;
+  const k = t < ts[1] ? 0 : t < ts[2] ? 1 : 2;
+  const h = ts[k + 1] - ts[k];
+  const u = (t - ts[k]) / h;
+  const u2 = u * u;
+  const u3 = u2 * u;
+  return (
+    (2 * u3 - 3 * u2 + 1) * ss[k] +
+    (u3 - 2 * u2 + u) * h * ms[k] +
+    (-2 * u3 + 3 * u2) * ss[k + 1] +
+    (u3 - u2) * h * ms[k + 1]
+  );
 }
 
 function smoothstep(from: number, to: number, t: number): number {
@@ -234,12 +273,14 @@ function FlowArrow({
   cx: number;
   cy: number;
 }) {
+  const timing = useMemo(() => arrowTiming(arrow, strand), [arrow, strand]);
+
   const animatedProps = useAnimatedProps(() => {
     const hidden = { d: "M0 0", strokeOpacity: 0 };
-    const raw = (clock.value - arrow.delay) / arrow.duration;
-    if (raw <= 0 || raw >= 1) return hidden;
+    const local = clock.value - arrow.delay;
+    if (local <= 0 || local >= arrow.duration) return hidden;
 
-    const head = easeInOut(raw) * strand.length;
+    const head = headAt(timing, local);
     const tail = Math.max(0, head - arrow.length);
     if (insideOnly && (head < strand.centerFrom || tail > strand.centerTo)) return hidden;
 
@@ -401,8 +442,24 @@ export function EnergyFlowLayer({
     >
       {layer === "back" ? (
         <>
-          <PoleGlow cx={cx} cy={cy - pole * flip} rise={200} peak={450} fade={800} clock={clock} color={COLORS[direction]} />
-          <PoleGlow cx={cx} cy={cy + pole * flip} rise={450} peak={750} fade={1150} clock={clock} color={COLORS[direction]} />
+          <PoleGlow
+            cx={cx}
+            cy={cy - pole * flip}
+            rise={FLOW_GATHER_MS * 0.2}
+            peak={FLOW_GATHER_MS + 40}
+            fade={FLOW_GATHER_MS + FLOW_PASS_MS * 0.8}
+            clock={clock}
+            color={COLORS[direction]}
+          />
+          <PoleGlow
+            cx={cx}
+            cy={cy + pole * flip}
+            rise={FLOW_GATHER_MS + FLOW_PASS_MS * 0.7}
+            peak={FLOW_GATHER_MS + FLOW_PASS_MS + 80}
+            fade={FLOW_GATHER_MS + FLOW_PASS_MS + 480}
+            clock={clock}
+            color={COLORS[direction]}
+          />
           {arrows(COLORS[direction], false)}
         </>
       ) : (
