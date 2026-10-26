@@ -75,7 +75,7 @@ export default function SeriesBreakScreen() {
               color: palette.accent,
             }}
           >
-            Дальше
+            Следующая практика
           </Text>
           <Text style={{ fontSize: 30, fontWeight: "700", color: palette.text, textAlign: "center" }}>
             {next.title}
