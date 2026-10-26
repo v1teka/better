@@ -19,6 +19,14 @@ pnpm test                 # vitest: подбор практик, часы тай
 npx eas-cli@latest build -p ios --profile production --auto-submit
 ```
 
+## Ветки
+
+- `main` — ровно то, что опубликовано в App Store; на каждый релиз — тег `vX.Y.Z`.
+- `dev` — текущая разработка; сборки для TestFlight и App Store собираются из неё.
+- После одобрения версии Apple `main` перематывается на релизный коммит `dev`
+  (`git merge --ff-only`), ставится тег, обе ветки и тег отправляются на GitHub.
+- В `main` напрямую не коммитить.
+
 ## Что важно знать
 
 - `bundleIdentifier` (`space.manus.…`) и `slug` (`practice-selector`) не менять:
