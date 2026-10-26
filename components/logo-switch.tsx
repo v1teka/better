@@ -115,12 +115,38 @@ export function LogoSwitch({
 
   // While dragged: the stream follows the finger, no faster than MAX_FLOW_RATE × real time,
   // and the knob is carried by the stream, so the two stay together at any finger speed
+  // Called from the frame callback when the stream has arrived; hoisted, so the worklet can
+  // capture it before `scrub` below is created
+  function stopScrub() {
+    scrub.setActive(false);
+  }
+
+  // The previous frame of this drag; -1 — none yet
+  const lastFrameAt = useSharedValue(-1);
+  // After the finger is lifted: 1 — the stream plays on to its end, -1 — it goes back, 0 — dragging
+  const releasing = useSharedValue(0);
+
   const scrub = useFrameCallback((frame) => {
     if (scrubbing.value !== 1) return;
-    const dt = frame.timeSincePreviousFrame ?? 16;
+    // Not frame.timeSincePreviousFrame: after the callback was paused between drags it reports
+    // the whole pause, and the first frame of a new drag would leap the stream to its end.
+    // Long frames are capped too, so a hitch doesn't make the arrows jump.
+    const dt = lastFrameAt.value < 0 ? 16 : Math.min(34, Math.max(0, frame.timestamp - lastFrameAt.value));
+    lastFrameAt.value = frame.timestamp;
     const diff = flowAtDistance(dragDistance.value) - flowClock.value;
-    const limit = MAX_FLOW_RATE * dt;
-    flowClock.value += Math.max(-limit, Math.min(limit, diff * Math.min(1, dt / CATCH_UP_MS)));
+    if (releasing.value !== 0) {
+      // Let go: at the stream's own pace forward, or back no faster than while dragged
+      const limit = (releasing.value === 1 ? 1 : MAX_FLOW_RATE) * dt;
+      flowClock.value += Math.max(-limit, Math.min(limit, diff));
+      if (Math.abs(diff) <= limit) {
+        scrubbing.value = 0;
+        releasing.value = 0;
+        runOnJS(stopScrub)();
+      }
+    } else {
+      const limit = MAX_FLOW_RATE * dt;
+      flowClock.value += Math.max(-limit, Math.min(limit, diff * Math.min(1, dt / CATCH_UP_MS)));
+    }
 
     const travelled = Math.min(1, flowClock.value / SCRUB_MS);
     const next = dragOrigin.value === 0 ? travelled : 1 - travelled;
@@ -146,6 +172,10 @@ export function LogoSwitch({
     if (!onPress) return;
     const target = down ? 0 : 1;
     ownTarget.current = target;
+    // A tap right after a drag takes the stream over from it
+    scrubbing.value = 0;
+    releasing.value = 0;
+    scrub.setActive(false);
     if (reduceMotion) {
       position.value = withSpring(target, SETTLE_SPRING);
     } else {
@@ -172,27 +202,33 @@ export function LogoSwitch({
     flowClock.value = flowAtDistance(dragDistance.value);
     startFlow(origin === 0 ? "down" : "up");
     scrubbing.value = 1;
+    releasing.value = 0;
+    lastFrameAt.value = -1;
     scrub.setActive(true);
   };
 
-  // A drag ends: the knob settles where its momentum takes it, the stream plays its ending
-  // in real time — or, if the knob goes back, retreats with it
+  // A drag ends. With the stream, the knob stays carried by it: switching, the stream plays to
+  // its end at its own speed and takes the knob to the far end; going back, it retreats and
+  // takes the knob home. However quick the swipe, the two arrive together.
   const endDrag = (toDown: boolean) => {
-    scrubbing.value = 0;
-    scrub.setActive(false);
     const target = toDown ? 1 : 0;
-    position.value = withSpring(target, SETTLE_SPRING);
-    if (target !== dragOrigin.value) {
-      if (!reduceMotion) {
-        const left = Math.max(0, FLOW_DURATION_MS - flowClock.value);
-        flowClock.value = withTiming(FLOW_DURATION_MS, { duration: left, easing: Easing.linear });
-        endFlowAfter(left);
-      }
+    const switching = target !== dragOrigin.value;
+    if (reduceMotion) {
+      scrubbing.value = 0;
+      scrub.setActive(false);
+      position.value = withSpring(target, SETTLE_SPRING);
+    } else {
+      releasing.value = switching ? 1 : -1;
+      dragDistance.value = switching ? 1 + OVERDRAG_TRAVELS : 0;
+      endFlowAfter(
+        switching
+          ? FLOW_DURATION_MS - flowClock.value
+          : flowClock.value / MAX_FLOW_RATE,
+      );
+    }
+    if (switching) {
       ownTarget.current = target;
       onPress?.();
-    } else if (!reduceMotion) {
-      flowClock.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.quad) });
-      endFlowAfter(250);
     }
   };
 
