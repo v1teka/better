@@ -7,7 +7,8 @@ import Animated, {
   type SharedValue,
   Easing,
   cancelAnimation,
-  useAnimatedReaction,
+  runOnJS,
+  useFrameCallback,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -36,6 +37,11 @@ const SCRUB_MS = FLOW_GATHER_MS + FLOW_PASS_MS;
 // Past the end of the knob's travel the finger keeps playing the rest of the flow:
 // one more knob travel of finger movement plays it to the end
 const OVERDRAG_TRAVELS = 1;
+// While dragged, the stream (and the knob with it) never runs faster than this many times
+// real time, however fast the finger moves: a flick makes the switch heavier, not the arrows hectic
+const MAX_FLOW_RATE = 1.5;
+// How quickly the stream catches up with the finger below that limit, ms
+const CATCH_UP_MS = 90;
 // On a tap the flow starts with the arrows already gathered over the crown, so the knob
 // and the stream move almost at once
 const TAP_LEAD_MS = FLOW_GATHER_MS - 40;
@@ -52,8 +58,9 @@ const TAP_LEAD_MS = FLOW_GATHER_MS - 40;
  *
  * Energy flows through it the way the knob goes (components/energy-flow.tsx), together with
  * the knob: on a tap the knob glides exactly while the stream passes through the body; while
- * dragged the stream follows the knob's position, at whatever speed, and plays its ending
- * once the knob is let go. `onPress` is called when the switch happens: at once on a tap,
+ * dragged the stream follows the finger — no faster than MAX_FLOW_RATE × real time — and
+ * carries the knob with it; past the end of the travel the finger plays the rest of the stream,
+ * and once let go it plays its ending. `onPress` is called when the switch happens: at once on a tap,
  * on release after a drag.
  */
 export function LogoSwitch({
@@ -102,12 +109,25 @@ export function LogoSwitch({
   // knob rests against the end, but the stream keeps going with the finger
   const dragDistance = useSharedValue(0);
 
-  useAnimatedReaction(
-    () => dragDistance.value,
-    (distance) => {
-      if (scrubbing.value === 1) flowClock.value = flowAtDistance(distance);
-    },
-  );
+  const tick = () => {
+    if (Platform.OS !== "web") Haptics.selectionAsync();
+  };
+
+  // While dragged: the stream follows the finger, no faster than MAX_FLOW_RATE × real time,
+  // and the knob is carried by the stream, so the two stay together at any finger speed
+  const scrub = useFrameCallback((frame) => {
+    if (scrubbing.value !== 1) return;
+    const dt = frame.timeSincePreviousFrame ?? 16;
+    const diff = flowAtDistance(dragDistance.value) - flowClock.value;
+    const limit = MAX_FLOW_RATE * dt;
+    flowClock.value += Math.max(-limit, Math.min(limit, diff * Math.min(1, dt / CATCH_UP_MS)));
+
+    const travelled = Math.min(1, flowClock.value / SCRUB_MS);
+    const next = dragOrigin.value === 0 ? travelled : 1 - travelled;
+    // A tick when the knob crosses the horizon
+    if (next > 0.5 !== position.value > 0.5) runOnJS(tick)();
+    position.value = next;
+  }, false);
 
   const startFlow = (direction: FlowDirection) => {
     flowRun.current += 1;
@@ -152,12 +172,14 @@ export function LogoSwitch({
     flowClock.value = flowAtDistance(dragDistance.value);
     startFlow(origin === 0 ? "down" : "up");
     scrubbing.value = 1;
+    scrub.setActive(true);
   };
 
   // A drag ends: the knob settles where its momentum takes it, the stream plays its ending
   // in real time — or, if the knob goes back, retreats with it
   const endDrag = (toDown: boolean) => {
     scrubbing.value = 0;
+    scrub.setActive(false);
     const target = toDown ? 1 : 0;
     position.value = withSpring(target, SETTLE_SPRING);
     if (target !== dragOrigin.value) {
@@ -177,6 +199,7 @@ export function LogoSwitch({
   const gesture = switchGesture({
     position,
     dragDistance,
+    carried: !reduceMotion,
     dragOrigin,
     pressed,
     travel,
@@ -295,6 +318,7 @@ function flowAtDistance(distance: number): number {
 function switchGesture({
   position,
   dragDistance,
+  carried,
   dragOrigin,
   pressed,
   travel,
@@ -304,6 +328,8 @@ function switchGesture({
 }: {
   position: SharedValue<number>;
   dragDistance: SharedValue<number>;
+  /** The knob is carried by the stream (it follows dragDistance); otherwise it follows itself */
+  carried: boolean;
   dragOrigin: SharedValue<number>;
   pressed: SharedValue<number>;
   travel: number;
@@ -348,12 +374,13 @@ function switchGesture({
     })
     .onUpdate((e) => {
       const raw = dragFrom + ((e.translationY - fingerFrom) * DRAG_GAIN) / travel;
-      const next = Math.min(1, Math.max(0, raw));
-      position.value = withSpring(next, FOLLOW_SPRING);
       // Toward the far end the distance grows past the knob's travel; back past the start it stays 0
       const toward = dragOrigin.value === 0 ? raw : 1 - raw;
-      dragDistance.value = withSpring(Math.max(0, toward), FOLLOW_SPRING);
-      // A tick when the knob crosses the horizon
+      dragDistance.value = Math.max(0, toward);
+      if (carried) return;
+      // Without the stream (reduced motion) the knob follows the finger by itself
+      const next = Math.min(1, Math.max(0, raw));
+      position.value = withSpring(next, FOLLOW_SPRING);
       if (next > 0.5 !== dragSide) {
         dragSide = next > 0.5;
         if (Platform.OS !== "web") Haptics.selectionAsync();
