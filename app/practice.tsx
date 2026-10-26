@@ -238,7 +238,8 @@ function PracticeView({ practice, totalSeconds }: { practice: Practice; totalSec
         </GlassCard>
 
         {/* Less needed during the practice: folded until tapped */}
-        <CollapsibleCard title="Завершение">
+        {/* When time is up, how to finish is what's needed next */}
+        <CollapsibleCard title="Завершение" openWhen={isDone}>
           <MarkdownText>{practice.finish}</MarkdownText>
         </CollapsibleCard>
         <CollapsibleCard title="Ожидаемый эффект">

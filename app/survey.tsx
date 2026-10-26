@@ -42,7 +42,7 @@ const QUESTIONS: {
   },
   {
     key: "time",
-    title: "Сколько есть времени?",
+    title: "Длительность практики",
     options: [
       { value: 2, label: "1–2 мин" },
       { value: 5, label: "3–5 мин" },

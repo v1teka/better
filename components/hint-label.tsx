@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 
 import { usePalette } from "@/lib/theme-setting";
@@ -29,7 +28,7 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
         style={({ pressed }) => ({
           flexDirection: "row",
           alignItems: "center",
-          gap: 6,
+          gap: 10,
           opacity: pressed ? 0.6 : 1,
         })}
       >
@@ -44,7 +43,28 @@ export function HintLabel({ label, hint }: { label: string; hint: string }) {
         >
           {label}
         </Text>
-        <Ionicons name={open ? "help-circle" : "help-circle-outline"} size={18} color={palette.accent} />
+        {/* A round help button, set apart from the caption so it doesn't read as «Сейчас выполняете?» */}
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: open ? palette.accent : palette.accent + "24",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              lineHeight: 16,
+              fontWeight: "800",
+              color: open ? palette.onButton : palette.accent,
+            }}
+          >
+            ?
+          </Text>
+        </View>
       </Pressable>
 
       {open && (

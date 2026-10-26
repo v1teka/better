@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Platform, Pressable, Text, View, type ViewProps } from "react-native";
 import Animated, { FadeIn, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -37,10 +37,25 @@ export function GlassCard({ title, children, style, ...props }: ViewProps & { ti
   );
 }
 
-/** Same card, folded under its caption until tapped */
-export function CollapsibleCard({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * Same card, folded under its caption until tapped.
+ * `openWhen` unfolds it when it becomes true (it can still be folded back by hand).
+ */
+export function CollapsibleCard({
+  title,
+  children,
+  openWhen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  openWhen?: boolean;
+}) {
   const palette = usePalette();
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (openWhen) setOpen(true);
+  }, [openWhen]);
 
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: withTiming(open ? "180deg" : "0deg", { duration: 200 }) }],
