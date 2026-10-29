@@ -43,6 +43,11 @@ const config: ExpoConfig = {
       {
         // The app only plays a gong sound; it never records
         microphonePermission: false,
+        recordAudioAndroid: false,
+        // The plugin declares background audio by default. The app plays no sound
+        // in the background (with the screen locked the gong comes as a notification),
+        // and App Review rejected 2.1.0 (6) for it under guideline 2.5.4.
+        enableBackgroundPlayback: false,
       },
     ],
     [
